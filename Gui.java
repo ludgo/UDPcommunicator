@@ -1,6 +1,9 @@
 package pks;
 
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -15,8 +18,11 @@ public class Gui extends JFrame {
 
 	private static final long serialVersionUID = 1L;
 	private MyCustomizedPanel panel;
+	private Communicator communicator;
 
-	public Gui() {
+	public Gui(Communicator c) {
+		
+		communicator = c;
 
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setSize(1300, 700);
@@ -62,6 +68,13 @@ public class Gui extends JFrame {
 			add(mSizeField);
 			
 			mSendButton.setBounds(850, 20, 200, 50);
+			mSendButton.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent arg0) {
+
+					communicator.pickFile();
+				}
+			});
 			add(mSendButton);
 			
 			// Output
