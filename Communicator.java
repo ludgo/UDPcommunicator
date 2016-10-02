@@ -13,8 +13,10 @@ import javax.swing.JPanel;
 
 public class Communicator extends JPanel {
 	
-	Server mServer = null;
-	Client mClient = null;
+	private static final long serialVersionUID = 1L;
+	
+	private Server mServer = null;
+	private Client mClient = null;
 	
 	// Run program
 	public static void main(String[] args) {
@@ -22,7 +24,7 @@ public class Communicator extends JPanel {
 		Gui g = new Gui(c);
 	}
 	
-	void pickFile() {
+	public void pickFile() {
 		final JFileChooser fc = new JFileChooser();
 		
 		int returnVal = fc.showOpenDialog(Communicator.this);
@@ -55,24 +57,30 @@ public class Communicator extends JPanel {
         }
 	}
 	
-	void launchServer(String port, Observer observer) {
-		if (mServer == null && mClient == null) {
+	public boolean launchServer(int port, Observer observer) {
+		if (mServer == null) {
 			mServer = new Server(port, observer);
 			mServer.start();
+			return true;
+		} else {
+			return false;
 		}
 	}
 	
-	void stopServer() {
+	public void stopServer() {
 		if (mServer != null) {
 			mServer.halt();
 			mServer = null;
 		}
 	}
 	
-	void connectClient(String ipAddress, String port) {
-		if (mServer == null && mClient == null) {
+	public boolean connectClient(String ipAddress, String port) {
+		if (mClient == null) {
 			mClient = new Client(ipAddress, port);
 			mClient.start();
+			return true;
+		} else {
+			return false;
 		}
 	}
 

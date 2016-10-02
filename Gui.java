@@ -19,6 +19,7 @@ import javax.swing.JTextField;
 public class Gui extends JFrame {
 
 	private static final long serialVersionUID = 1L;
+	
 	private MyCustomizedPanel panel;
 	private Communicator communicator;
 
@@ -65,6 +66,12 @@ public class Gui extends JFrame {
 		
 		private JButton mSendButton = new JButton("Send file");
 
+		private JLabel mInputLabel = new JLabel("Input");
+		private JTextArea mInputArea = new JTextArea(30, 60);
+		private JScrollPane mInputPane = new JScrollPane(mInputArea, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
+				JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
+
+		private JLabel mOutputLabel = new JLabel("Ouput");
 		private JTextArea mOutputArea = new JTextArea(30, 60);
 		private JScrollPane mOutputPane = new JScrollPane(mOutputArea, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
 				JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
@@ -81,8 +88,12 @@ public class Gui extends JFrame {
 				@Override
 				public void actionPerformed(ActionEvent arg0) {
 					
-					String port = mServerPortField.getText();
-					communicator.launchServer(port, panel);
+					int port = getPort(mServerPortField);
+					if (port == -1) {
+						mOutputArea.append("Not a valid port!\n");
+					} else if (!communicator.launchServer(port, panel)) {
+						mOutputArea.append("Server already running!\n");
+					}
 				}
 			});
 			
@@ -110,8 +121,12 @@ public class Gui extends JFrame {
 				public void actionPerformed(ActionEvent arg0) {
 					
 					String ipAddress = mClientIpField.getText();
+					if (ipAddress == null) return;
 					String port = mClientPortField.getText();
-					communicator.connectClient(ipAddress, port);
+					if (port == null) return;
+					if (!communicator.connectClient(ipAddress, port)) {
+						mOutputArea.append("Server already connected!\n");
+					}
 				}
 			});
 			
@@ -140,7 +155,14 @@ public class Gui extends JFrame {
 				}
 			});
 			
-			mOutputPane.setBounds(20, 100, 1000, 500);
+			mInputLabel.setBounds(20, 140, 50, 100);
+			add(mInputLabel);
+			mInputPane.setBounds(100, 140, 1000, 100);
+			add(mInputPane);
+			
+			mOutputLabel.setBounds(20, 250, 50, 100);
+			add(mOutputLabel);
+			mOutputPane.setBounds(100, 250, 1000, 300);
 			add(mOutputPane);
 		}
 
@@ -149,6 +171,21 @@ public class Gui extends JFrame {
 			if (arg1 instanceof String) {
 				mOutputArea.append((String) arg1);
 			}
+		}
+		
+		private int getPort(JTextField field) {
+			try {
+				int number = Integer.parseInt(field.getText());
+				if (number > 0 && number < 65535) {
+					return number;
+				}
+				// Not positive
+			} catch (NullPointerException e) {
+				// The field is null
+			} catch (NumberFormatException e) {
+				// String in the field is not integer type
+			}
+			return -1;
 		}
 		
 	}
