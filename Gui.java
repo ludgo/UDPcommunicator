@@ -30,7 +30,7 @@ public class Gui extends JFrame {
 		panel = new MyCustomizedPanel();
 		add(panel);
 		
-		setTitle("UDP communiation");
+		setTitle("UDP communication");
 		setVisible(true);
 
 		
@@ -44,14 +44,14 @@ public class Gui extends JFrame {
 		private JLabel mServerLabel = new JLabel("Server");
 		private JButton mLaunchButton = new JButton("Launch");
 		
-		private JLabel mServerIpLabel = new JLabel("IP address");
-		private JTextField mServerIpField = new JTextField(10);
-		
 		private JLabel mServerPortLabel = new JLabel("port");
 		private JTextField mServerPortField = new JTextField(10);
 		
 		private JLabel mClientLabel = new JLabel("Client");
 		private JButton mConnectButton = new JButton("Connect");
+		
+		private JLabel mClientIpLabel = new JLabel("IP address");
+		private JTextField mClientIpField = new JTextField(10);
 		
 		private JLabel mClientPortLabel = new JLabel("port");
 		private JTextField mClientPortField = new JTextField(10);
@@ -77,21 +77,14 @@ public class Gui extends JFrame {
 				@Override
 				public void actionPerformed(ActionEvent arg0) {
 					
-					String ipAddress = mServerIpField.getText();
 					String port = mServerPortField.getText();
-					communicator.launchServer(ipAddress, port);
+					communicator.launchServer(port);
 				}
 			});
-			add(mSendButton);
 			
-			mServerIpLabel.setBounds(30, 40, 100, 30);
-			add(mServerIpLabel);
-			mServerIpField.setBounds(130, 40, 200, 30);
-			add(mServerIpField);
-			
-			mServerPortLabel.setBounds(30, 70, 100, 30);
+			mServerPortLabel.setBounds(30, 40, 100, 30);
 			add(mServerPortLabel);
-			mServerPortField.setBounds(130, 70, 200, 30);
+			mServerPortField.setBounds(130, 40, 200, 30);
 			add(mServerPortField);
 			
 			mClientLabel.setBounds(430, 10, 100, 30);
@@ -102,15 +95,20 @@ public class Gui extends JFrame {
 				@Override
 				public void actionPerformed(ActionEvent arg0) {
 					
+					String ipAddress = mClientIpField.getText();
 					String port = mClientPortField.getText();
-					communicator.connectClient(port);
+					communicator.connectClient(ipAddress, port);
 				}
 			});
-			add(mSendButton);
 			
-			mClientPortLabel.setBounds(430, 40, 100, 30);
+			mClientIpLabel.setBounds(430, 40, 100, 30);
+			add(mClientIpLabel);
+			mClientIpField.setBounds(530, 40, 200, 30);
+			add(mClientIpField);
+			
+			mClientPortLabel.setBounds(430, 70, 100, 30);
 			add(mClientPortLabel);
-			mClientPortField.setBounds(530, 40, 200, 30);
+			mClientPortField.setBounds(530, 70, 200, 30);
 			add(mClientPortField);
 			
 			mSizeLabel.setBounds(830, 10, 200, 30);
@@ -127,7 +125,6 @@ public class Gui extends JFrame {
 					communicator.pickFile();
 				}
 			});
-			add(mSendButton);
 			
 			mOutputPane.setBounds(20, 100, 1000, 500);
 			add(mOutputPane);
