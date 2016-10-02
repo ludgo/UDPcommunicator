@@ -7,7 +7,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 
-public class Client {
+public class Client extends Thread {
 	
 	DatagramSocket mSocket = null;
 	String mIpAddress;
@@ -18,6 +18,10 @@ public class Client {
 		mIpAddress = ipAddress;
 		mPort = port;
 	}
+	
+	public void run() {
+		connect();
+    }
 	
 	public void connect() {
 		BufferedReader cin = new BufferedReader(new InputStreamReader(System.in));

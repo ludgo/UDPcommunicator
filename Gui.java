@@ -3,6 +3,8 @@ package pks;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.Observable;
+import java.util.Observer;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -37,12 +39,14 @@ public class Gui extends JFrame {
 	}
 
 
-	private class MyCustomizedPanel extends JPanel {
+	private class MyCustomizedPanel extends JPanel implements Observer {
 		
 		private static final long serialVersionUID = 1L;
 
 		private JLabel mServerLabel = new JLabel("Server");
 		private JButton mLaunchButton = new JButton("Launch");
+		
+		private JButton mStopButton = new JButton("Stop");
 		
 		private JLabel mServerPortLabel = new JLabel("port");
 		private JTextField mServerPortField = new JTextField(10);
@@ -78,13 +82,23 @@ public class Gui extends JFrame {
 				public void actionPerformed(ActionEvent arg0) {
 					
 					String port = mServerPortField.getText();
-					communicator.launchServer(port);
+					communicator.launchServer(port, panel);
 				}
 			});
 			
-			mServerPortLabel.setBounds(30, 40, 100, 30);
+			mStopButton.setBounds(130, 40, 200, 30);
+			add(mStopButton);
+			mStopButton.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent arg0) {
+					
+					communicator.stopServer();
+				}
+			});
+			
+			mServerPortLabel.setBounds(30, 70, 100, 30);
 			add(mServerPortLabel);
-			mServerPortField.setBounds(130, 40, 200, 30);
+			mServerPortField.setBounds(130, 70, 200, 30);
 			add(mServerPortField);
 			
 			mClientLabel.setBounds(430, 10, 100, 30);
@@ -128,6 +142,13 @@ public class Gui extends JFrame {
 			
 			mOutputPane.setBounds(20, 100, 1000, 500);
 			add(mOutputPane);
+		}
+
+		@Override
+		public void update(Observable arg0, Object arg1) {
+			if (arg1 instanceof String) {
+				mOutputArea.append((String) arg1);
+			}
 		}
 		
 	}

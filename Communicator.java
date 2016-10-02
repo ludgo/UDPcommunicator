@@ -6,11 +6,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Observer;
 
 import javax.swing.JFileChooser;
 import javax.swing.JPanel;
 
 public class Communicator extends JPanel {
+	
+	Server mServer = null;
+	Client mClient = null;
 	
 	// Run program
 	public static void main(String[] args) {
@@ -51,15 +55,25 @@ public class Communicator extends JPanel {
         }
 	}
 	
-	void launchServer(String port) {
-		Server s = new Server(port);
-		s.launch();
-		
+	void launchServer(String port, Observer observer) {
+		if (mServer == null && mClient == null) {
+			mServer = new Server(port, observer);
+			mServer.start();
+		}
+	}
+	
+	void stopServer() {
+		if (mServer != null) {
+			mServer.halt();
+			mServer = null;
+		}
 	}
 	
 	void connectClient(String ipAddress, String port) {
-		Client c = new Client(ipAddress, port);
-		c.connect();
+		if (mServer == null && mClient == null) {
+			mClient = new Client(ipAddress, port);
+			mClient.start();
+		}
 	}
 
 }
