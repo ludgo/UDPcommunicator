@@ -67,21 +67,42 @@ public class Communicator extends JPanel {
 		}
 	}
 	
-	public void stopServer() {
+	public boolean stopServer() {
 		if (mServer != null) {
 			mServer.halt();
 			mServer = null;
+			return true;
 		}
+		return false;
 	}
 	
-	public boolean connectClient(String ipAddress, String port) {
+	public boolean connectClient(String ipAddress, int port, Observer observer) {
 		if (mClient == null) {
-			mClient = new Client(ipAddress, port);
+			mClient = new Client(ipAddress, port, observer);
 			mClient.start();
 			return true;
 		} else {
 			return false;
 		}
 	}
+	
+	public boolean sendMessage(String message) {
+		if (mClient != null) {
+			mClient.setMessage(message);
+			return true;
+		}
+		return false;
+	}
+	
+	public boolean disconnectClient() {
+		if (mClient != null) {
+			mClient.halt();
+			mClient = null;
+			return true;
+		}
+		return false;
+	}
+	
+	
 
 }

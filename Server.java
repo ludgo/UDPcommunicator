@@ -22,7 +22,7 @@ public class Server extends Thread {
 	
 	public void run() {
 		launch();
-		mObservable.informUser("Shutting down...\n");
+		mObservable.informUser("Shutting down server...\n");
     }
 	
 	private void launch() {
