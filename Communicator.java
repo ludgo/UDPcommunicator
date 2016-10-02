@@ -50,5 +50,13 @@ public class Communicator extends JPanel {
 
         }
 	}
+	
+	void launchServer(String ipAddress, String port) {
+		
+	}
+	
+	void connectClient(String port) {
+		
+	}
 
 }

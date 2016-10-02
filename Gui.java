@@ -30,7 +30,7 @@ public class Gui extends JFrame {
 		panel = new MyCustomizedPanel();
 		add(panel);
 		
-		setTitle("Chat");
+		setTitle("UDP communiation");
 		setVisible(true);
 
 		
@@ -41,10 +41,22 @@ public class Gui extends JFrame {
 		
 		private static final long serialVersionUID = 1L;
 
-		private JLabel mGoalLabel = new JLabel("Goal address");
-		private JTextField mGoalField = new JTextField(10);
+		private JLabel mServerLabel = new JLabel("Server");
+		private JButton mLaunchButton = new JButton("Launch");
 		
-		private JLabel mSizeLabel = new JLabel("Max. fragment size");
+		private JLabel mServerIpLabel = new JLabel("IP address");
+		private JTextField mServerIpField = new JTextField(10);
+		
+		private JLabel mServerPortLabel = new JLabel("port");
+		private JTextField mServerPortField = new JTextField(10);
+		
+		private JLabel mClientLabel = new JLabel("Client");
+		private JButton mConnectButton = new JButton("Connect");
+		
+		private JLabel mClientPortLabel = new JLabel("port");
+		private JTextField mClientPortField = new JTextField(10);
+		
+		private JLabel mSizeLabel = new JLabel("Max. fragment Bytes");
 		private JTextField mSizeField = new JTextField(10);
 		
 		private JButton mSendButton = new JButton("Send file");
@@ -57,17 +69,57 @@ public class Gui extends JFrame {
 			
 			setLayout(null);
 			
-			mGoalLabel.setBounds(20, 20, 200, 50);
-			add(mGoalLabel);
-			mGoalField.setBounds(150, 20, 200, 50);
-			add(mGoalField);
+			mServerLabel.setBounds(30, 10, 100, 30);
+			add(mServerLabel);
+			mLaunchButton.setBounds(130, 10, 200, 30);
+			add(mLaunchButton);
+			mLaunchButton.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent arg0) {
+					
+					String ipAddress = mServerIpField.getText();
+					String port = mServerPortField.getText();
+					communicator.launchServer(ipAddress, port);
+				}
+			});
+			add(mSendButton);
 			
-			mSizeLabel.setBounds(420, 20, 200, 50);
+			mServerIpLabel.setBounds(30, 40, 100, 30);
+			add(mServerIpLabel);
+			mServerIpField.setBounds(130, 40, 200, 30);
+			add(mServerIpField);
+			
+			mServerPortLabel.setBounds(30, 70, 100, 30);
+			add(mServerPortLabel);
+			mServerPortField.setBounds(130, 70, 200, 30);
+			add(mServerPortField);
+			
+			mClientLabel.setBounds(430, 10, 100, 30);
+			add(mClientLabel);
+			mConnectButton.setBounds(530, 10, 200, 30);
+			add(mConnectButton);
+			mConnectButton.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent arg0) {
+					
+					String port = mClientPortField.getText();
+					communicator.connectClient(port);
+				}
+			});
+			add(mSendButton);
+			
+			mClientPortLabel.setBounds(430, 40, 100, 30);
+			add(mClientPortLabel);
+			mClientPortField.setBounds(530, 40, 200, 30);
+			add(mClientPortField);
+			
+			mSizeLabel.setBounds(830, 10, 200, 30);
 			add(mSizeLabel);
-			mSizeField.setBounds(550, 20, 200, 50);
+			mSizeField.setBounds(1030, 10, 100, 30);
 			add(mSizeField);
 			
-			mSendButton.setBounds(850, 20, 200, 50);
+			mSendButton.setBounds(830, 40, 100, 30);
+			add(mSendButton);
 			mSendButton.addActionListener(new ActionListener() {
 				@Override
 				public void actionPerformed(ActionEvent arg0) {
@@ -77,7 +129,6 @@ public class Gui extends JFrame {
 			});
 			add(mSendButton);
 			
-			// Output
 			mOutputPane.setBounds(20, 100, 1000, 500);
 			add(mOutputPane);
 		}
