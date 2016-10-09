@@ -171,7 +171,7 @@ public class Gui extends JFrame {
 				@Override
 				public void actionPerformed(ActionEvent arg0) {
 
-					communicator.pickFile();
+					communicator.sendFile();
 				}
 			});
 			

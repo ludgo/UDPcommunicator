@@ -9,6 +9,10 @@ import java.util.Observer;
 
 public class Client extends Thread {
 	
+	public static int TYPE_MESSAGE = 10;
+	public static int TYPE_FILE = 11;
+	private int mType;
+	
 	private DatagramSocket mSocket = null;
 	private InetAddress mHost = null;
 	private String mIpAddress;
@@ -16,12 +20,17 @@ public class Client extends Thread {
 	private MyObservable mObservable;
 	
 	private boolean mConnected;
-	private String mMessage;
+	private byte[] mData;
 
 	public Client(String ipAddress, int port, Observer o) {
 		mIpAddress = ipAddress;
 		mPort = port;
 		mObservable = new MyObservable(o);
+	}
+	
+	public void setData(byte[] data, int type) {
+		mType = type;
+		mData = data;
 	}
 		
 	public void halt() {
@@ -65,26 +74,20 @@ public class Client extends Thread {
 				//e.printStackTrace();
 			}
         	
-        	sendMessage();
-        	mMessage = null;
+        	send();
+        	mData = null;
         }
 	}
 	
-	public void setMessage(String message) {
-		mMessage = message;
-	}
-	
-	private void sendMessage() {
+	private void send() {
 		
 		
-		if (mSocket != null && mMessage != null) {
+		if (mSocket != null && mData != null) {
 			
 			try {
-	            
-		        byte[] b = mMessage.getBytes();
-		        
+	            		        
 		        DatagramPacket  dp = new DatagramPacket(
-		        		b , b.length , mHost , mPort);
+		        		mData , mData.length , mHost , mPort);
 		        mSocket.send(dp);
 		         
 		        //now receive reply

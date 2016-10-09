@@ -1,14 +1,8 @@
 package pks;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.Observer;
 
-import javax.swing.JFileChooser;
 import javax.swing.JPanel;
 
 public class Communicator extends JPanel {
@@ -24,42 +18,10 @@ public class Communicator extends JPanel {
 		Gui g = new Gui(c);
 	}
 	
-	public void pickFile() {
-		final JFileChooser fc = new JFileChooser();
-		
-		int returnVal = fc.showOpenDialog(Communicator.this);
-
-        if (returnVal == JFileChooser.APPROVE_OPTION) {
-            File file = fc.getSelectedFile();
-            System.out.println(file.getPath());
-            
-            byte[] data;
-            Path path = Paths.get(file.getPath());
-            try {
-				data = Files.readAllBytes(path);
-	            System.out.println(Arrays.toString(data));
-	            
-	            
-	            
-	            
-	            Path newPath = Paths.get("C:\\Users\\lajos\\Desktop\\New Text Document2.txt");
-	            Files.write(newPath, data);
-	            
-	            
-	            
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-
-        } else {
-
-        }
-	}
 	
 	public boolean launchServer(int port, Observer observer) {
-		if (mServer == null) {
-			mServer = new Server(port, observer);
+		if (!isServerLaunched()) {
+			mServer = new Server(port, observer, this);
 			mServer.start();
 			return true;
 		} else {
@@ -68,7 +30,7 @@ public class Communicator extends JPanel {
 	}
 	
 	public boolean stopServer() {
-		if (mServer != null) {
+		if (isServerLaunched()) {
 			mServer.halt();
 			mServer = null;
 			return true;
@@ -76,8 +38,12 @@ public class Communicator extends JPanel {
 		return false;
 	}
 	
+	private boolean isServerLaunched() {
+		return mServer != null;
+	}
+	
 	public boolean connectClient(String ipAddress, int port, Observer observer) {
-		if (mClient == null) {
+		if (!isCientConnected()) {
 			mClient = new Client(ipAddress, port, observer);
 			mClient.start();
 			return true;
@@ -86,19 +52,40 @@ public class Communicator extends JPanel {
 		}
 	}
 	
-	public boolean sendMessage(String message) {
-		if (mClient != null) {
-			mClient.setMessage(message);
+	public boolean disconnectClient() {
+		if (isCientConnected()) {
+			mClient.halt();
+			mClient = null;
 			return true;
 		}
 		return false;
 	}
 	
-	public boolean disconnectClient() {
-		if (mClient != null) {
-			mClient.halt();
-			mClient = null;
-			return true;
+	private boolean isCientConnected() {
+		return mClient != null;
+	}
+	
+	public boolean sendMessage(String message) {
+		if (isCientConnected()) {
+			byte[] data = Utilities.packMessage(message);
+			if (data != null) {
+				mClient.setData(data, Client.TYPE_MESSAGE);
+				return true;	
+			}
+		}
+		return false;
+	}
+	
+	public boolean sendFile() {
+		if (isCientConnected()) {
+			File file = Utilities.pickFile(this);
+			if (file != null) {
+				byte[] data = Utilities.packFile(file);
+				if (data != null) {
+					mClient.setData(data, Client.TYPE_FILE);
+					return true;	
+				}
+			}
 		}
 		return false;
 	}

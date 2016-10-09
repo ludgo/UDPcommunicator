@@ -3,7 +3,10 @@ package pks;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.util.Arrays;
 import java.util.Observer;
+
+import javax.swing.JPanel;
 
 public class Server extends Thread {
 	
@@ -11,9 +14,12 @@ public class Server extends Thread {
 	private int mPort;
 	private MyObservable mObservable;
 	
-	public Server(int port, Observer o) {
+	private JPanel mPanel;
+	
+	public Server(int port, Observer o, JPanel panel) {
 		mPort = port;
 		mObservable = new MyObservable(o);
+		mPanel = panel;
 	}
 	
 	public void halt() {
@@ -51,12 +57,9 @@ public class Server extends Thread {
 	            while(true)
 	            {
 	            	mSocket.receive(incoming);
-	                byte[] data = incoming.getData();
-	                String s = new String(data, 0, incoming.getLength());
-	                 
-	                //echo the details of incoming data - client ip : client port - client message
-	                mObservable.informUser(incoming.getAddress().getHostAddress() + " : " + incoming.getPort() + " - " + s); 
-	                 
+	                //String s = processMessage(incoming);
+	                String s = processFile(incoming);
+	                 	                 
 	                s = "OK : " + s;
 	                DatagramPacket dp = new DatagramPacket(s.getBytes() , s.getBytes().length , incoming.getAddress() , incoming.getPort());
 	                mSocket.send(dp);
@@ -68,6 +71,27 @@ public class Server extends Thread {
 	            //System.err.println("IOException " + e);
 	        }
 		}
+	}
+	
+	private String processMessage(DatagramPacket incoming) {
+        byte[] data = incoming.getData();
+        String s = new String(data, 0, incoming.getLength());
+         
+        //echo the details of incoming data - client ip : client port - client message
+        mObservable.informUser(incoming.getAddress().getHostAddress() + " : " + incoming.getPort() + " - " + s);
+        
+        return s;
+
+	}
+	
+	private String processFile(DatagramPacket incoming) {
+        byte[] data = incoming.getData();        
+        byte[] newData = Arrays.copyOf(data, incoming.getLength());
+
+        Utilities.saveFile(mPanel, newData, null);
+                
+        return "";
+
 	}
 
 }
