@@ -5,14 +5,15 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Arrays;
 import java.util.Observer;
 
 public class Client extends Thread {
 	
-	public static int TYPE_MESSAGE = 10;
-	public static int TYPE_FILE = 11;
 	private int mType;
-	
+	private byte[] mData;
+	private String mName;
+
 	private DatagramSocket mSocket = null;
 	private InetAddress mHost = null;
 	private String mIpAddress;
@@ -20,17 +21,17 @@ public class Client extends Thread {
 	private MyObservable mObservable;
 	
 	private boolean mConnected;
-	private byte[] mData;
-
+	
 	public Client(String ipAddress, int port, Observer o) {
 		mIpAddress = ipAddress;
 		mPort = port;
 		mObservable = new MyObservable(o);
 	}
 	
-	public void setData(byte[] data, int type) {
+	public void setData(int type, byte[] data, String name) {
 		mType = type;
 		mData = data;
+		mName = name;
 	}
 		
 	public void halt() {
@@ -71,23 +72,29 @@ public class Client extends Thread {
         	try {
 				sleep(3000);
 			} catch (InterruptedException e) {
-				//e.printStackTrace();
+				
+				//mObservable.informUser(e.toString());
 			}
         	
         	send();
+        	mType = 0;
         	mData = null;
+        	mName = null;
         }
 	}
 	
 	private void send() {
 		
 		
-		if (mSocket != null && mData != null) {
+		if (mSocket != null && mType > 0 && mData != null) {
+			
+			byte[] udpData = CustomProtocol.addCustomHeader(mType, mData, mName);
+			if (udpData == null) return;
 			
 			try {
 	            		        
-		        DatagramPacket  dp = new DatagramPacket(
-		        		mData , mData.length , mHost , mPort);
+		        DatagramPacket dp = new DatagramPacket(
+		        		udpData , udpData.length , mHost , mPort);
 		        mSocket.send(dp);
 		         
 		        //now receive reply
@@ -106,7 +113,7 @@ public class Client extends Thread {
 	         
 	        catch(IOException e)
 	        {
-	            //System.err.println("IOException " + e);
+				//mObservable.informUser(e.toString());
 	        }
 		}
 				

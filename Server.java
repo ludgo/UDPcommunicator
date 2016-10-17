@@ -45,53 +45,58 @@ public class Server extends Thread {
 		
 		if (mSocket != null) {
 		
-			try {
-	            
+			try {	            
 	        	//buffer to receive incoming data
 	        	byte[] buffer = new byte[65536];
 	        	DatagramPacket incoming = new DatagramPacket(buffer, buffer.length);
 	         
 	        	//2. Wait for an incoming data
-	
 	        	//communication loop
 	            while(true)
 	            {
 	            	mSocket.receive(incoming);
-	                //String s = processMessage(incoming);
-	                String s = processFile(incoming);
-	                 	                 
-	                s = "OK : " + s;
-	                DatagramPacket dp = new DatagramPacket(s.getBytes() , s.getBytes().length , incoming.getAddress() , incoming.getPort());
-	                mSocket.send(dp);
+					String s = "";
+
+		        	byte[] data = incoming.getData();
+		        	
+		        	byte[] udpData = Arrays.copyOf(data, incoming.getLength());	 
+		        	int type = CustomProtocol.getType(udpData);
+
+		            switch(type) {
+		    		case CustomProtocol.TYPE_MESSAGE: {
+		    			byte[] messageData = CustomProtocol.getData(udpData);
+		    			s = Utilities.bytesToString(messageData);
+		    			
+		    	        mObservable.informUser(incoming.getAddress().getHostAddress() + " : " + incoming.getPort() + " - " + s);
+			            
+		                s = "OK : " + s;
+		                DatagramPacket dp = new DatagramPacket(s.getBytes() , s.getBytes().length , incoming.getAddress() , incoming.getPort());
+		                mSocket.send(dp);
+		                break;
+		    		}
+		    		case CustomProtocol.TYPE_FILE: {
+		    			byte[] fileData = CustomProtocol.getData(udpData);
+		    			String fileName = CustomProtocol.getName(udpData);
+		    			Utilities.saveFile(mPanel, fileData, fileName);
+		    			
+		    	        mObservable.informUser(incoming.getAddress().getHostAddress() + " : " + incoming.getPort() + " - " + s);
+			            
+		                s = "OK : " + s;
+		                DatagramPacket dp = new DatagramPacket(s.getBytes() , s.getBytes().length , incoming.getAddress() , incoming.getPort());
+		                mSocket.send(dp);
+		                break;
+		    		}
+		    		default:{
+		    			break;
+		    		}
+		    		}
 	            }
 	        }
 	         
 	        catch(IOException e)
 	        {
-	            //System.err.println("IOException " + e);
+				//mObservable.informUser(e.toString());
 	        }
 		}
 	}
-	
-	private String processMessage(DatagramPacket incoming) {
-        byte[] data = incoming.getData();
-        String s = new String(data, 0, incoming.getLength());
-         
-        //echo the details of incoming data - client ip : client port - client message
-        mObservable.informUser(incoming.getAddress().getHostAddress() + " : " + incoming.getPort() + " - " + s);
-        
-        return s;
-
-	}
-	
-	private String processFile(DatagramPacket incoming) {
-        byte[] data = incoming.getData();        
-        byte[] newData = Arrays.copyOf(data, incoming.getLength());
-
-        Utilities.saveFile(mPanel, newData, null);
-                
-        return "";
-
-	}
-
 }

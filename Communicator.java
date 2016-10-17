@@ -1,6 +1,7 @@
 package pks;
 
 import java.io.File;
+import java.math.BigInteger;
 import java.util.Observer;
 
 import javax.swing.JPanel;
@@ -15,7 +16,7 @@ public class Communicator extends JPanel {
 	// Run program
 	public static void main(String[] args) {
 		Communicator c = new Communicator();
-		Gui g = new Gui(c);
+		Gui g = new Gui(c);		
 	}
 	
 	
@@ -43,7 +44,7 @@ public class Communicator extends JPanel {
 	}
 	
 	public boolean connectClient(String ipAddress, int port, Observer observer) {
-		if (!isCientConnected()) {
+		if (!isClientConnected()) {
 			mClient = new Client(ipAddress, port, observer);
 			mClient.start();
 			return true;
@@ -53,7 +54,7 @@ public class Communicator extends JPanel {
 	}
 	
 	public boolean disconnectClient() {
-		if (isCientConnected()) {
+		if (isClientConnected()) {
 			mClient.halt();
 			mClient = null;
 			return true;
@@ -61,15 +62,15 @@ public class Communicator extends JPanel {
 		return false;
 	}
 	
-	private boolean isCientConnected() {
+	private boolean isClientConnected() {
 		return mClient != null;
 	}
 	
 	public boolean sendMessage(String message) {
-		if (isCientConnected()) {
-			byte[] data = Utilities.packMessage(message);
-			if (data != null) {
-				mClient.setData(data, Client.TYPE_MESSAGE);
+		if (isClientConnected()) {
+			byte[] messageData = Utilities.stringToBytes(message);
+			if (messageData != null) {
+				mClient.setData(CustomProtocol.TYPE_MESSAGE, messageData, null);
 				return true;	
 			}
 		}
@@ -77,12 +78,13 @@ public class Communicator extends JPanel {
 	}
 	
 	public boolean sendFile() {
-		if (isCientConnected()) {
+		if (isClientConnected()) {
 			File file = Utilities.pickFile(this);
 			if (file != null) {
-				byte[] data = Utilities.packFile(file);
-				if (data != null) {
-					mClient.setData(data, Client.TYPE_FILE);
+				byte[] fileData = Utilities.fileToBytes(file);
+				String fileName = Utilities.getFileName(file);
+				if (fileData != null) {
+					mClient.setData(CustomProtocol.TYPE_FILE, fileData, fileName);
 					return true;	
 				}
 			}
