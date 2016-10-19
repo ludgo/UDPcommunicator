@@ -1,6 +1,5 @@
 package pks;
 
-import java.util.Arrays;
 
 public class CustomProtocol {
 	
@@ -44,9 +43,7 @@ public class CustomProtocol {
 		
 		if (data == null) return null;
 		int length = data.length;
-		System.out.println(length + "\n");
-		long checksum = 0;
-		//long checksum = Utilities.calcChecksum(data);
+		long checksum = Utilities.calcChecksum(data);
 		
 		if (checkParams(packetOrder, totalPackets, length, type)) {
 			
@@ -70,6 +67,7 @@ public class CustomProtocol {
 			udpData[9] = Utilities.numToByte(checksum, 16);
 			udpData[10] = Utilities.numToByte(checksum, 8);
 			udpData[11] = Utilities.numToByte(checksum);
+			// data
 			System.arraycopy(data, 0, udpData, CUSTOM_HEADER_LENGTH, length);
 
 			return udpData;
@@ -86,8 +84,6 @@ public class CustomProtocol {
 	}
 	
 	public int getLength(byte[] udpData) {
-		int aaa = (int) (Utilities.byteToNum(udpData[4], 8) | Utilities.byteToNum(udpData[5]));
-		System.out.println(aaa + "\n");
 		return (int) (Utilities.byteToNum(udpData[4], 8) | Utilities.byteToNum(udpData[5]));
 	}
 	

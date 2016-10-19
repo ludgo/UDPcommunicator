@@ -50,19 +50,22 @@ public class Gui extends JFrame {
 		
 		private JButton mStopButton = new JButton("Stop");
 		
-		private JLabel mServerPortLabel = new JLabel("port");
-		private JTextField mServerPortField = new JTextField(10);
+		private JLabel mLaunchServerPortLabel = new JLabel("launch port");
+		private JTextField mLaunchServerPortField = new JTextField(10);
 		
 		private JLabel mClientLabel = new JLabel("Client");
 		private JButton mConnectButton = new JButton("Connect");
 		
 		private JButton mDisconnectButton = new JButton("Disconnect");
 
-		private JLabel mClientIpLabel = new JLabel("IP address");
-		private JTextField mClientIpField = new JTextField(10);
+		private JLabel mConnectServerIpLabel = new JLabel("server IP address");
+		private JTextField mConnectServerIpField = new JTextField(10);
 		
-		private JLabel mClientPortLabel = new JLabel("port");
-		private JTextField mClientPortField = new JTextField(10);
+		private JLabel mConnectServerPortLabel = new JLabel("server port");
+		private JTextField mConnectServerPortField = new JTextField(10);
+		
+		private JLabel mConnectClientPortLabel = new JLabel("client port");
+		private JTextField mConnectClientPortField = new JTextField(10);
 		
 		private JLabel mSizeLabel = new JLabel("Max. fragment Bytes");
 		private JTextField mSizeField = new JTextField(10);
@@ -92,7 +95,7 @@ public class Gui extends JFrame {
 				@Override
 				public void actionPerformed(ActionEvent arg0) {
 					
-					int port = getPort(mServerPortField);
+					int port = getPort(mLaunchServerPortField);
 					if (port == -1) {
 						mOutputArea.append("Not a valid port!\n");
 					} else if (!communicator.launchServer(port, panel)) {
@@ -113,10 +116,10 @@ public class Gui extends JFrame {
 				}
 			});
 			
-			mServerPortLabel.setBounds(30, 70, 100, 30);
-			add(mServerPortLabel);
-			mServerPortField.setBounds(130, 70, 200, 30);
-			add(mServerPortField);
+			mLaunchServerPortLabel.setBounds(30, 70, 100, 30);
+			add(mLaunchServerPortLabel);
+			mLaunchServerPortField.setBounds(130, 70, 200, 30);
+			add(mLaunchServerPortField);
 			
 			mClientLabel.setBounds(430, 10, 100, 30);
 			add(mClientLabel);
@@ -126,13 +129,14 @@ public class Gui extends JFrame {
 				@Override
 				public void actionPerformed(ActionEvent arg0) {
 					
-					String ipAddress = getIpAddress(mClientIpField);
-					int port = getPort(mClientPortField);
-					if (ipAddress == null) {
+					String serverIpAddress = getIpAddress(mConnectServerIpField);
+					int serverPort = getPort(mConnectServerPortField);
+					int clientPort = getPort(mConnectClientPortField);
+					if (serverIpAddress == null) {
 						mOutputArea.append("Not a valid IP address!\n");
-					} else if (port == -1) {
+					} else if (serverPort == -1 || clientPort == -1) {
 						mOutputArea.append("Not a valid port!\n");
-					} else if (!communicator.connectClient(ipAddress, port, panel)) {
+					} else if (!communicator.connectClient(serverIpAddress, serverPort, clientPort, panel)) {
 						mOutputArea.append("Client already created!\n");
 					}
 				}
@@ -150,15 +154,20 @@ public class Gui extends JFrame {
 				}
 			});
 			
-			mClientIpLabel.setBounds(430, 70, 100, 30);
-			add(mClientIpLabel);
-			mClientIpField.setBounds(530, 70, 200, 30);
-			add(mClientIpField);
+			mConnectServerIpLabel.setBounds(430, 70, 100, 30);
+			add(mConnectServerIpLabel);
+			mConnectServerIpField.setBounds(530, 70, 200, 30);
+			add(mConnectServerIpField);
 			
-			mClientPortLabel.setBounds(430, 100, 100, 30);
-			add(mClientPortLabel);
-			mClientPortField.setBounds(530, 100, 200, 30);
-			add(mClientPortField);
+			mConnectServerPortLabel.setBounds(430, 100, 100, 30);
+			add(mConnectServerPortLabel);
+			mConnectServerPortField.setBounds(530, 100, 200, 30);
+			add(mConnectServerPortField);
+			
+			mConnectClientPortLabel.setBounds(430, 130, 100, 30);
+			add(mConnectClientPortLabel);
+			mConnectClientPortField.setBounds(530, 130, 200, 30);
+			add(mConnectClientPortField);
 			
 			mSizeLabel.setBounds(830, 10, 200, 30);
 			add(mSizeLabel);
@@ -175,11 +184,11 @@ public class Gui extends JFrame {
 				}
 			});
 			
-			mInputLabel.setBounds(20, 140, 50, 100);
+			mInputLabel.setBounds(20, 170, 50, 100);
 			add(mInputLabel);
-			mInputPane.setBounds(100, 140, 1000, 100);
+			mInputPane.setBounds(100, 170, 1000, 100);
 			add(mInputPane);
-			mSendMessageButton.setBounds(100, 250, 200, 30);
+			mSendMessageButton.setBounds(100, 280, 200, 30);
 			add(mSendMessageButton);
 			mSendMessageButton.addActionListener(new ActionListener() {
 				@Override
@@ -195,18 +204,14 @@ public class Gui extends JFrame {
 			});
 			
 						
-			mOutputLabel.setBounds(20, 300, 50, 100);
+			mOutputLabel.setBounds(20, 330, 50, 100);
 			add(mOutputLabel);
-			mOutputPane.setBounds(100, 300, 1000, 300);
+			mOutputPane.setBounds(100, 330, 1000, 300);
 			add(mOutputPane);
 			
 			
 			
 			
-			// TODO remove
-			mServerPortField.setText("7");
-			mClientPortField.setText("7");
-			mClientIpField.setText("localhost");
 		}
 
 		@Override

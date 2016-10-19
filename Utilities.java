@@ -8,7 +8,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.zip.CRC32;
 import java.util.zip.Checksum;
 
@@ -114,7 +113,7 @@ public class Utilities {
 		checksum.update(data, 0, data.length);				 
 		return checksum.getValue();
 	}
-	
+		
 	public static boolean validateChecksum(byte[] data, long suggested) {
 		long value = calcChecksum(data);
 		return value == suggested;
@@ -175,4 +174,5 @@ public class Utilities {
 	public static long byteToNum(byte value) {
 		return byteToNum(value, 0);
 	}
+	
 }

@@ -1,7 +1,6 @@
 package pks;
 
 import java.io.File;
-import java.math.BigInteger;
 import java.util.Observer;
 
 import javax.swing.JPanel;
@@ -16,7 +15,7 @@ public class Communicator extends JPanel {
 	// Run program
 	public static void main(String[] args) {
 		Communicator c = new Communicator();
-		Gui g = new Gui(c);		
+		new Gui(c);		
 	}
 	
 	
@@ -43,9 +42,9 @@ public class Communicator extends JPanel {
 		return mServer != null;
 	}
 	
-	public boolean connectClient(String ipAddress, int port, Observer observer) {
+	public boolean connectClient(String serverIpAddress, int serverPort, int clientPort, Observer observer) {
 		if (!isClientConnected()) {
-			mClient = new Client(ipAddress, port, observer);
+			mClient = new Client(serverIpAddress, serverPort, clientPort, observer);
 			mClient.start();
 			return true;
 		} else {

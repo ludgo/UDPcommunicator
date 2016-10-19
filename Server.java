@@ -27,25 +27,49 @@ public class Server extends Thread {
 		mPanel = panel;
 	}
 	
-	public void halt() {
-		mSocket.close();
-	}
-	
 	public void run() {
 		launch();
 		mObservable.informUser("Shutting down server...\n");
     }
 	
 	private void launch() {
-		
+		/*InetAddress localAddress; 
 		try {			
-			mSocket = new DatagramSocket(7777);
-        	mObservable.informUser("Server socket created. Waiting for incoming data at port " + mPort + "...\n");  
+			mSocket = new DatagramSocket(mPort);			
+			mSocket.connect(InetAddress.getByName("localhost"), mPort);
+
+	        localAddress = mSocket.getInetAddress();
+
+	        mSocket.disconnect();
+	        mSocket.close();
+	        mSocket = null;
         }    
         catch(IOException e)
         {
-        	mObservable.informUser("Server not launched.\n");  
+        	mObservable.informUser("Server not launched.\n");
+        	return;
         }
+		
+		try {			
+			mSocket = new DatagramSocket(mPort, localAddress);
+        	mObservable.informUser("Server socket created for " + localAddress.getHostAddress() + 
+        			". Waiting for incoming data at port " + mPort + "...\n");  
+        }    
+        catch(IOException e)
+        {
+        	mObservable.informUser("Server not launched.\n");
+        	return;
+        }*/
+		
+		try {			
+			mSocket = new DatagramSocket(mPort);
+        }    
+        catch(IOException e)
+        {
+        	mObservable.informUser("Server not launched.\n");
+        	return;
+        }
+    	mObservable.informUser("Server socket created. Waiting for incoming data at port " + mPort + "...\n");  
 		
 		if (mSocket != null) {
 		
@@ -115,7 +139,7 @@ public class Server extends Thread {
 		    		}
 		    		}
 		            
-		            send(sendData, incoming.getAddress());
+		            send(sendData, incoming.getAddress(), incoming.getPort());
 	            }
 	        }
 	         
@@ -126,11 +150,11 @@ public class Server extends Thread {
 		}
 	}
 	
-	private void send(byte[] data, InetAddress host) {
+	private void send(byte[] data, InetAddress host, int port) {
 		
 		try {	        
 	        DatagramPacket dp = new DatagramPacket(
-	        		data , data.length , host , 7778);
+	        		data , data.length , host , port);
 	        mSocket.send(dp);
        }
          
@@ -138,5 +162,10 @@ public class Server extends Thread {
         {
 			//mObservable.informUser(e.toString());
        }
+	}
+	
+	public void halt() {
+		mSocket.close();
+		mSocket = null;
 	}
 }

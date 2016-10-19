@@ -21,21 +21,23 @@ public class Client extends Thread {
 	private byte[][] mUdpPackets;
 	private CustomProtocol mCustomProtocol;
 
-	private static final int RETRY_LIMIT = 5;
-	private static final int NO_RESPONSE_LIMIT = 3;
+	private static final int RETRY_LIMIT = 30;
+	private static final int NO_RESPONSE_LIMIT = 5;
 	private static final int SLEEP_TIME = 1000;
 	private static final int RECEIVE_TIMEOUT = 3000;
 	
 	private DatagramSocket mSocket = null;
 	private InetAddress mHost = null;
-	private String mIpAddress;
-	private int mPort;
+	private String mServerIpAddress;
+	private int mServerPort;
+	private int mClientPort;
 	private MyObservable mObservable;
 		
-	public Client(String ipAddress, int port, Observer o) {
+	public Client(String serverIpAddress, int serverPort, int clientPort, Observer o) {
 		mCustomProtocol = new CustomProtocol();
-		mIpAddress = ipAddress;
-		mPort = port;
+		mServerIpAddress = serverIpAddress;
+		mServerPort = serverPort;
+		mClientPort = clientPort;
 		mObservable = new MyObservable(o);
 		mStatus = STATUS_WAIT;
 	}
@@ -53,9 +55,7 @@ public class Client extends Thread {
 		int totalPackets = packets.size();
 		mUdpPackets = new byte[totalPackets][];
 		for (int i = 0; i < totalPackets; i++) {
-			mObservable.informUser(Arrays.toString(packets.get(i)) + '\n');
 			mUdpPackets[i] = mCustomProtocol.addHeader(i+1, totalPackets, type, packets.get(i));
-			mObservable.informUser(Arrays.toString(mUdpPackets[i]) + '\n');
 		}
 		
 		mStatus = STATUS_INIT;
@@ -68,9 +68,9 @@ public class Client extends Thread {
     }
 	
 	private void connect() {
-        try
+        /*try
         {
-        	mSocket = new DatagramSocket(7778);
+        	mSocket = new DatagramSocket(mPort);
         } 
         catch(IOException e)
         {
@@ -85,10 +85,45 @@ public class Client extends Thread {
 	       	mObservable.informUser("Client not connected.\n");
         	return;
  		}
-       	mConnected = true;
-        
-        mObservable.informUser("Client socket created for " + mIpAddress + ":" + mPort + "\n");  
+        mObservable.informUser("Client socket created for " + mIpAddress + ":" + mPort + "\n");  */
 
+		InetAddress localAddress; 
+		try {			
+			mSocket = new DatagramSocket(mClientPort);			
+			mSocket.connect(InetAddress.getByName(mServerIpAddress), mServerPort);
+
+	        localAddress = mSocket.getLocalAddress();
+
+	        mSocket.disconnect();
+	        mSocket.close();
+	        mSocket = null;
+        }    
+        catch(IOException e)
+        {
+        	mObservable.informUser("Client not connected.\n");
+        	return;
+        }
+		
+		try {			
+			mSocket = new DatagramSocket(mClientPort, localAddress);
+        }    
+        catch(IOException e)
+        {
+        	mObservable.informUser("Client not connected.\n");
+        	return;
+        }
+
+		try {
+			mHost = InetAddress.getByName(mServerIpAddress);
+		} catch (UnknownHostException e) {
+			halt();
+	       	mObservable.informUser("Client not connected.\n");
+        	return;
+ 		}
+        mConnected = true;
+        mObservable.informUser("Client socket created for " + localAddress.getHostAddress() + ":" + mClientPort + 
+        		" for server at " + mHost.getHostAddress() + ":" + mServerPort + "\n");  
+        
         int retryCount = 0, noResponseCount = 0;
         loop: while (mConnected) {
         	
@@ -191,7 +226,7 @@ public class Client extends Thread {
 					//mObservable.informUser(Arrays.toString(data) + '\n');
     		        
 			        DatagramPacket dp = new DatagramPacket(
-			        		data , data.length , mHost , 7777);
+			        		data , data.length , mHost , mServerPort);
 			        mSocket.send(dp);
 			         
 			        byte[] buffer = new byte[65536];
@@ -215,7 +250,8 @@ public class Client extends Thread {
 	}
 	
 	public void halt() {
-		mConnected = false;
 		mSocket.close();		
+		mSocket = null;
+		mHost = null;
 	}
 }
