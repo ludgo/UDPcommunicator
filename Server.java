@@ -3,6 +3,7 @@ package pks;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.util.Arrays;
 import java.util.Observer;
 
@@ -10,6 +11,9 @@ import javax.swing.JPanel;
 
 public class Server extends Thread {
 	
+	private byte[][] mUdpPackets = null;
+	private CustomProtocol mCustomProtocol;
+
 	private DatagramSocket mSocket = null;
 	private int mPort;
 	private MyObservable mObservable;
@@ -17,6 +21,7 @@ public class Server extends Thread {
 	private JPanel mPanel;
 	
 	public Server(int port, Observer o, JPanel panel) {
+		mCustomProtocol = new CustomProtocol();
 		mPort = port;
 		mObservable = new MyObservable(o);
 		mPanel = panel;
@@ -34,8 +39,7 @@ public class Server extends Thread {
 	private void launch() {
 		
 		try {			
-            //1. creating a server socket, parameter is local port number
-			mSocket = new DatagramSocket(mPort);
+			mSocket = new DatagramSocket(7777);
         	mObservable.informUser("Server socket created. Waiting for incoming data at port " + mPort + "...\n");  
         }    
         catch(IOException e)
@@ -45,51 +49,73 @@ public class Server extends Thread {
 		
 		if (mSocket != null) {
 		
-			try {	            
-	        	//buffer to receive incoming data
+			try {     
 	        	byte[] buffer = new byte[65536];
 	        	DatagramPacket incoming = new DatagramPacket(buffer, buffer.length);
 	         
-	        	//2. Wait for an incoming data
-	        	//communication loop
-	            while(true)
+	            whileloop: while(true)
 	            {
 	            	mSocket.receive(incoming);
-					String s = "";
-
 		        	byte[] data = incoming.getData();
 		        	
 		        	byte[] udpData = Arrays.copyOf(data, incoming.getLength());	 
-		        	int type = CustomProtocol.getType(udpData);
+		        	int type = mCustomProtocol.getType(udpData);
+		        	
+		        	byte[] sendData;
+		        	String s = "";
 
-		            switch(type) {
+		            switchlabel: switch(type) {
+		    		case CustomProtocol.TYPE_CONNECT: {
+		    			if (mUdpPackets == null) {
+			        		sendData = mCustomProtocol.buildSignalMessage(CustomProtocol.TYPE_CONFIRM);		    				
+			        	} else {
+			    			for (int i = 0; i < mUdpPackets.length; i++) {
+			    				if (mUdpPackets[i] == null) {
+					        		sendData = mCustomProtocol.buildSignalMessage(CustomProtocol.TYPE_CONFIRM);		    				
+					        		break switchlabel;
+			    				}
+			    			}
+			    			String fileName = Utilities.bytesToString(mUdpPackets[0]);
+			    			mUdpPackets[0] = new byte[0];
+			    			
+			    			byte[] fileData = Utilities.joinArrays(mUdpPackets);
+			    	        Utilities.saveFile(mPanel, fileData, fileName);
+			    	        mUdpPackets = null;
+			        		
+			        		mObservable.informUser("fileName:" + fileName + "\n");
+
+			        		sendData = mCustomProtocol.buildSignalMessage(CustomProtocol.TYPE_SUCCESS);			        				
+			        	}
+		        		break;
+		    		}
 		    		case CustomProtocol.TYPE_MESSAGE: {
-		    			byte[] messageData = CustomProtocol.getData(udpData);
+		    			byte[] messageData = mCustomProtocol.getData(udpData);
 		    			s = Utilities.bytesToString(messageData);
 		    			
-		    	        mObservable.informUser(incoming.getAddress().getHostAddress() + " : " + incoming.getPort() + " - " + s);
+		    	        mObservable.informUser("OK " + incoming.getAddress().getHostAddress() + " " + incoming.getPort() + " - " + s + "\n");
 			            
-		                s = "OK : " + s;
-		                DatagramPacket dp = new DatagramPacket(s.getBytes() , s.getBytes().length , incoming.getAddress() , incoming.getPort());
-		                mSocket.send(dp);
+		        		sendData = mCustomProtocol.buildSignalMessage(CustomProtocol.TYPE_OK);			            
 		                break;
 		    		}
 		    		case CustomProtocol.TYPE_FILE: {
-		    			byte[] fileData = CustomProtocol.getData(udpData);
-		    			String fileName = CustomProtocol.getName(udpData);
-		    			Utilities.saveFile(mPanel, fileData, fileName);
-		    			
-		    	        mObservable.informUser(incoming.getAddress().getHostAddress() + " : " + incoming.getPort() + " - " + s);
-			            
-		                s = "OK : " + s;
-		                DatagramPacket dp = new DatagramPacket(s.getBytes() , s.getBytes().length , incoming.getAddress() , incoming.getPort());
-		                mSocket.send(dp);
+		    			int packetOrder = mCustomProtocol.getPacketOrder(udpData);
+		    			int totalPackets = mCustomProtocol.getTotalPackets(udpData);
+		    			byte[] part = mCustomProtocol.getData(udpData);
+
+		    			if (mUdpPackets == null) {
+		    				mUdpPackets = new byte[totalPackets][];
+		    			}
+		    			mUdpPackets[packetOrder - 1] = part;
+
+		        		sendData = mCustomProtocol.buildSignalMessage(packetOrder, totalPackets, CustomProtocol.TYPE_OK);
 		                break;
 		    		}
 		    		default:{
-		    			break;
+		    			continue whileloop;
 		    		}
 		    		}
+		            
+		            send(sendData, incoming.getAddress());
 	            }
 	        }
 	         
@@ -98,5 +124,19 @@ public class Server extends Thread {
 				//mObservable.informUser(e.toString());
 	        }
 		}
+	}
+	
+	private void send(byte[] data, InetAddress host) {
+		
+		try {	        
+	        DatagramPacket dp = new DatagramPacket(
+	        		data , data.length , host , 7778);
+	        mSocket.send(dp);
+       }
+         
+        catch(IOException e)
+        {
+			//mObservable.informUser(e.toString());
+       }
 	}
 }

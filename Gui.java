@@ -199,6 +199,14 @@ public class Gui extends JFrame {
 			add(mOutputLabel);
 			mOutputPane.setBounds(100, 300, 1000, 300);
 			add(mOutputPane);
+			
+			
+			
+			
+			// TODO remove
+			mServerPortField.setText("7");
+			mClientPortField.setText("7");
+			mClientIpField.setText("localhost");
 		}
 
 		@Override

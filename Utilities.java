@@ -7,6 +7,8 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.zip.CRC32;
 import java.util.zip.Checksum;
 
@@ -116,5 +118,61 @@ public class Utilities {
 	public static boolean validateChecksum(byte[] data, long suggested) {
 		long value = calcChecksum(data);
 		return value == suggested;
+	}
+	
+	public static ArrayList<byte[]> addDataParts(ArrayList<byte[]> parts, byte[] data, int maxLength) {
+		if (parts == null) {
+			parts = new ArrayList<>();			
+		}
+		int dataLength = data.length;
+		int rider = 0;
+		while (true) {
+			byte[] part;
+			int length;
+			if (dataLength - rider <= maxLength) {
+				length = dataLength - rider;
+				part = new byte[length];
+				System.arraycopy(data, rider, part, 0, length);
+				parts.add(part);
+				break;
+			} else {
+				length = maxLength;
+				part = new byte[length];
+				System.arraycopy(data, rider, part, 0, length);
+				parts.add(part);
+				rider += maxLength;
+			}
+		}
+		return parts;
+	}
+	
+	public static byte[] joinArrays(byte[][] arrays) {
+		int sumLength = 0;
+		for (int i = 0; i < arrays.length; i++) {
+			sumLength += arrays[i].length;
+		}
+		byte[] newArray = new byte[sumLength];
+		int rider = 0;
+		for (int i = 0; i < arrays.length; i++) {
+			System.arraycopy(arrays[i], 0, newArray, rider, arrays[i].length);
+			rider += arrays[i].length;
+		}
+		return newArray;
+	}
+	
+	public static byte numToByte(long value, int shiftRight) {
+		return ((byte) ((value >> shiftRight) & 0xFF));
+	}
+	
+	public static byte numToByte(long value) {
+		return numToByte(value, 0);
+	}
+	
+	public static long byteToNum(byte value, long shiftLeft) {
+		return ((value & 0xFF) << shiftLeft);
+	}
+	
+	public static long byteToNum(byte value) {
+		return byteToNum(value, 0);
 	}
 }

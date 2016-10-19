@@ -4,100 +4,115 @@ import java.util.Arrays;
 
 public class CustomProtocol {
 	
-	public static final int TYPE_INFO = 1;
-	public static final int TYPE_MESSAGE = 2;
-	public static final int TYPE_FILE = 3;
+	public static final int TYPE_CONNECT = 1;
+	public static final int TYPE_CONFIRM = 2;
+	public static final int TYPE_MESSAGE = 3;
+	public static final int TYPE_FILE = 4;
+	public static final int TYPE_OK = 6;
+	public static final int TYPE_RETRY = 7;
+	public static final int TYPE_SUCCESS = 8;
+	public static final int TYPE_FAIL = 9;
 	
-	private static final int NAME_LENGTH_MIN = 0;
-	private static final int NAME_LENGTH_MAX = 255;
-	private static final int DATA_LENGTH_MIN = 0;
-	private static final int DATA_LENGTH_MAX = 65459;
+	public static final int DATA_LENGTH_MIN = 0;
+	public static final int DATA_LENGTH_MAX = 65455;
 	
-	private static final int CUSTOM_HEADER_LENGTH = 8;
+	private static final int CUSTOM_HEADER_LENGTH = 12;
 
-	private static boolean correctParams(int type, int nameLength, int dataLength) {
+	private boolean checkParams(int packetOrder, int totalPackets, int length, int type) {
+		// TODO
 		switch(type) {
-		case TYPE_MESSAGE: {
-			return nameLength == NAME_LENGTH_MIN &&
-					dataLength > DATA_LENGTH_MIN &&
-					dataLength <= DATA_LENGTH_MAX;
-		}
-		case TYPE_FILE: {
-			return nameLength > NAME_LENGTH_MIN &&
-					nameLength <= NAME_LENGTH_MAX &&
-					dataLength > DATA_LENGTH_MIN &&
-					dataLength <= DATA_LENGTH_MAX;
+		case TYPE_CONNECT:
+		case TYPE_CONFIRM:
+		case TYPE_MESSAGE:
+		case TYPE_FILE:
+		case TYPE_OK:
+		case TYPE_RETRY:
+		case TYPE_SUCCESS:
+		case TYPE_FAIL:{
+			return packetOrder > 0 &&
+					packetOrder <= totalPackets &&
+					length > DATA_LENGTH_MIN &&
+					length <= DATA_LENGTH_MAX;
 		}
 		default:
 			return false;
+			
 		}
 	}
 	
-	public static byte[] addCustomHeader(int type, byte[] data, String name) {
+	public byte[] addHeader(int packetOrder, int totalPackets, int type, byte[] data) {
 		
 		if (data == null) return null;
-		if (name == null) name = "";
-		byte[] nameData = Utilities.stringToBytes(name);
-
-		int nameLength = nameData.length;
-		int dataLength = data.length;
+		int length = data.length;
+		System.out.println(length + "\n");
+		long checksum = 0;
+		//long checksum = Utilities.calcChecksum(data);
 		
-		if (correctParams(type, nameLength, dataLength)) {
-			int packetOrder = 1;
-			int totalPackets = 1;
+		if (checkParams(packetOrder, totalPackets, length, type)) {
 			
-			int udpLength = CUSTOM_HEADER_LENGTH + nameLength + dataLength;
+			int udpLength = CUSTOM_HEADER_LENGTH + length;
 			byte[] udpData = new byte[udpLength];
 			
-			udpData[0] = (byte) (packetOrder >> 8);
-			udpData[1] = (byte) packetOrder;
-			udpData[2] = (byte) (totalPackets >> 8);
-			udpData[3] = (byte) totalPackets;
-			udpData[4] = (byte) type;
-			udpData[5] = (byte) nameLength;
-			udpData[6] = (byte) (dataLength >> 8);
-			udpData[7] = (byte) dataLength;
-			System.arraycopy(nameData, 0, udpData, CUSTOM_HEADER_LENGTH, nameLength);
-			System.arraycopy(data, 0, udpData, CUSTOM_HEADER_LENGTH + nameLength, dataLength);
+			// packet order
+			udpData[0] = Utilities.numToByte(packetOrder, 8);
+			udpData[1] = Utilities.numToByte(packetOrder);
+			// total packets
+			udpData[2] = Utilities.numToByte(totalPackets, 8);
+			udpData[3] = Utilities.numToByte(totalPackets);
+			// length
+			udpData[4] = Utilities.numToByte(length, 8);
+			udpData[5] = Utilities.numToByte(length);
+			// type
+			udpData[6] = Utilities.numToByte(type, 8);
+			udpData[7] = Utilities.numToByte(type);
+			// checksum
+			udpData[8] = Utilities.numToByte(checksum, 24);
+			udpData[9] = Utilities.numToByte(checksum, 16);
+			udpData[10] = Utilities.numToByte(checksum, 8);
+			udpData[11] = Utilities.numToByte(checksum);
+			System.arraycopy(data, 0, udpData, CUSTOM_HEADER_LENGTH, length);
 
 			return udpData;
 		}
 		return null;
 	}
 	
-	public static int getPacketOrder(byte[] udpData) {
-		return (udpData[0] << 8) | udpData[1];
+	public int getPacketOrder(byte[] udpData) {
+		return (int) (Utilities.byteToNum(udpData[0], 8) | Utilities.byteToNum(udpData[1]));
 	}
 	
-	public static int getTotalPackets(byte[] udpData) {
-		return (udpData[2] << 8) | udpData[3];
+	public int getTotalPackets(byte[] udpData) {
+		return (int) (Utilities.byteToNum(udpData[2], 8) | Utilities.byteToNum(udpData[3]));
 	}
 	
-	public static int getType(byte[] udpData) {
-		return udpData[4];
+	public int getLength(byte[] udpData) {
+		int aaa = (int) (Utilities.byteToNum(udpData[4], 8) | Utilities.byteToNum(udpData[5]));
+		System.out.println(aaa + "\n");
+		return (int) (Utilities.byteToNum(udpData[4], 8) | Utilities.byteToNum(udpData[5]));
 	}
 	
-	public static int getNameLength(byte[] udpData) {
-		return udpData[5];
+	public int getType(byte[] udpData) {
+		return (int) (Utilities.byteToNum(udpData[6], 8) | Utilities.byteToNum(udpData[7]));
 	}
 	
-	public static int getDataLength(byte[] udpData) {
-		return (udpData[6] << 8) | udpData[7];
+	public long getChecksum(byte[] udpData) {
+		return (int) (Utilities.byteToNum(udpData[8], 24) | Utilities.byteToNum(udpData[9], 16) | 
+				Utilities.byteToNum(udpData[10], 8) | Utilities.byteToNum(udpData[11]));
 	}
 	
-	public static String getName(byte[] udpData) {
-		int nameLength = getNameLength(udpData);
-		byte[] nameData = new byte[nameLength];
-		System.arraycopy(udpData, CUSTOM_HEADER_LENGTH, nameData, 0, nameLength);
-		return Utilities.bytesToString(nameData);
-	}
-	
-	public static byte[] getData(byte[] udpData) {
-		int nameLength = getNameLength(udpData);
-		int dataLength = getDataLength(udpData);
+	public byte[] getData(byte[] udpData) {
+		int dataLength = getLength(udpData);
 		byte[] data = new byte[dataLength];
-		System.arraycopy(udpData, CUSTOM_HEADER_LENGTH + nameLength, data, 0, dataLength);
+		System.arraycopy(udpData, CUSTOM_HEADER_LENGTH, data, 0, dataLength);
 		return data;
+	}
+	
+	public byte[] buildSignalMessage(int packetOrder, int totalPackets, int type) {
+		return addHeader(packetOrder, totalPackets, type, new byte[]{0,0,0,0});
+	}
+	
+	public byte[] buildSignalMessage(int type) {
+		return buildSignalMessage(1, 1, type);
 	}
 
 }
