@@ -67,11 +67,11 @@ public class Communicator extends JPanel {
 	
 	public boolean sendMessage(String message) {
 		if (isClientConnected()) {
-			byte[] messageData = Utilities.stringToBytes(message);
-			if (messageData != null) {
+			if (mClient.isAvailable()) {
+				byte[] messageData = Utilities.stringToBytes(message);
 				mClient.setData(CustomProtocol.TYPE_MESSAGE, messageData, null);
-				return true;	
 			}
+			return true;
 		}
 		return false;
 	}
@@ -80,12 +80,16 @@ public class Communicator extends JPanel {
 		if (isClientConnected()) {
 			File file = Utilities.pickFile(this);
 			if (file != null) {
-				byte[] fileData = Utilities.fileToBytes(file);
-				String fileName = Utilities.getFileName(file);
-				if (fileData != null) {
-					mClient.setData(CustomProtocol.TYPE_FILE, fileData, fileName);
-					return true;	
+				if (mClient.isAvailable()) {
+					byte[] fileData = Utilities.fileToBytes(file);
+					String fileName = Utilities.getFileName(file);
+					if (fileData != null) {
+						mClient.setData(CustomProtocol.TYPE_FILE, fileData, fileName);
+					} else {
+						return false;
+					}
 				}
+				return true;	
 			}
 		}
 		return false;

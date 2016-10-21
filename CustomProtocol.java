@@ -119,7 +119,6 @@ public class CustomProtocol {
 	
 	private byte[] setChecksum(byte[] udpData) {
 		long checksum = Utilities.calcChecksum(udpData);
-		System.out.println(checksum + "\n");
 		
 		// checksum
 		udpData[8] = Utilities.longToByte(checksum, 24);
@@ -132,7 +131,6 @@ public class CustomProtocol {
 	
 	public byte[] checkChecksum(byte[] udpData) {
     	long checksum = getChecksum(udpData);
-		System.out.println(checksum + "\n");
     	udpData = removeChecksum(udpData);
     	if (Utilities.validateChecksum(udpData, checksum)) {
     		return udpData;

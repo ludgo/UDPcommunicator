@@ -3,11 +3,14 @@ package pks;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.DatagramPacket;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.zip.CRC32;
 import java.util.zip.Checksum;
 
@@ -74,7 +77,7 @@ public class Utilities {
 		return null;
 	}
 	
-	public static void saveFile(JPanel panel, byte[] fileData, String fileName) {        
+	public static String saveFile(JPanel panel, byte[] fileData, String fileName) {        
         
         JFileChooser chooser = new JFileChooser();
         chooser.setSelectedFile(new File(fileName));
@@ -94,18 +97,21 @@ public class Utilities {
                 		JOptionPane.WARNING_MESSAGE);
                 
                 if (response == JOptionPane.NO_OPTION) {
-                	return;
+                	return null;
                 }                            
             }
             
             Path filePath = Paths.get(file.getAbsolutePath());
     		try {
     			Files.write(filePath, fileData);
+    			return filePath.toString();
+    			
     		} catch (IOException e) {
 
     			//e.printStackTrace();
     		}
         }
+        return null;
 	}
 	
 	public static long calcChecksum(byte[] data) {
@@ -174,6 +180,15 @@ public class Utilities {
 	
 	public static long byteToLong(byte value, int shiftLeft) {
 		return ((value & 0xffL) << shiftLeft);
+	}
+	
+	public static String formatHost(DatagramPacket packet) {
+		if (packet == null) return null;
+		return packet.getAddress().getHostAddress() + ":" + packet.getPort();
+	}
+	
+	public static String getCurrentTime() {
+		return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date());
 	}
 	
 }

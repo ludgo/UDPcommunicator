@@ -180,7 +180,9 @@ public class Gui extends JFrame {
 				@Override
 				public void actionPerformed(ActionEvent arg0) {
 
-					communicator.sendFile();
+					if (!communicator.sendFile()) {
+						mOutputArea.append("File not sent.\n");
+					}
 				}
 			});
 			
@@ -198,7 +200,7 @@ public class Gui extends JFrame {
 					if (message == null) {
 						mOutputArea.append("Message empty!\n");
 					} else if (!communicator.sendMessage(message)) {
-						//mOutputArea.append("Client already created!\n");
+						mOutputArea.append("Message not sent.\n");
 					}
 				}
 			});
@@ -210,8 +212,13 @@ public class Gui extends JFrame {
 			add(mOutputPane);
 			
 			
-			
-			
+			/******************************************************/
+			// TESTING
+			mLaunchServerPortField.setText("7777");
+			mConnectServerIpField.setText("localhost");
+			mConnectServerPortField.setText("7777");
+			mConnectClientPortField.setText("7778");
+			/******************************************************/
 		}
 
 		@Override

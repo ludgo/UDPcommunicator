@@ -22,8 +22,8 @@ public class Client extends Thread {
 	private CustomProtocol mCustomProtocol;
 
 	private static final int RETRY_LIMIT = 30;
-	private static final int NO_RESPONSE_LIMIT = 5;
-	private static final int SLEEP_TIME = 1000;
+	private static final int NO_RESPONSE_LIMIT = 10;
+	//private static final int SLEEP_TIME = 3000;
 	private static final int RECEIVE_TIMEOUT = 3000;
 	
 	private DatagramSocket mSocket = null;
@@ -109,11 +109,11 @@ public class Client extends Thread {
         int retryCount = 0, noResponseCount = 0;
         loop: while (mConnected) {
         	
-        	try {
+        	/*try {
 				sleep(SLEEP_TIME);
 			} catch (InterruptedException e) {				
 				//mObservable.informUser(e.toString());
-			}
+			}*/
         	
         	byte[] sendData = null;
         	
@@ -176,10 +176,9 @@ public class Client extends Thread {
 	        		continue loop;
 	        	}
 	        	
-	        	int replyType = mCustomProtocol.getType(replyData);
 	        	int replyPacketOrder = mCustomProtocol.getPacketOrder(replyData);
 	        	
-	        	switch(replyType) {
+	        	switch(mCustomProtocol.getType(replyData)) {
 	        	case CustomProtocol.TYPE_CONFIRM: {
 	        		if (mStatus == STATUS_INIT) {
 	        			mStatus = STATUS_SEND;	        			
@@ -200,7 +199,7 @@ public class Client extends Thread {
 	        		break;
 	        	}
 	        	case CustomProtocol.TYPE_SUCCESS: {
-            		mObservable.informUser("Client: Sending ended with success.\n");
+	    			mObservable.informUser("Client: Sending ended with success.\n");
 	        		mStatus = STATUS_WAIT;
 	        		break;
 	        	}
@@ -252,5 +251,14 @@ public class Client extends Thread {
 		mSocket.close();		
 		mSocket = null;
 		mHost = null;
+	}
+	
+	public boolean isAvailable() {
+		if (mStatus == STATUS_WAIT) {
+			return true;
+		} else {
+			mObservable.informUser("Client is busy.\n");
+			return false;
+		}
 	}
 }
