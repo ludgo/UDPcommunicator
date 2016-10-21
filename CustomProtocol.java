@@ -43,7 +43,6 @@ public class CustomProtocol {
 		
 		if (data == null) return null;
 		int length = data.length;
-		long checksum = Utilities.calcChecksum(data);
 		
 		if (checkParams(packetOrder, totalPackets, length, type)) {
 			
@@ -51,49 +50,44 @@ public class CustomProtocol {
 			byte[] udpData = new byte[udpLength];
 			
 			// packet order
-			udpData[0] = Utilities.numToByte(packetOrder, 8);
-			udpData[1] = Utilities.numToByte(packetOrder);
+			udpData[0] = Utilities.intToByte(packetOrder, 8);
+			udpData[1] = Utilities.intToByte(packetOrder, 0);
 			// total packets
-			udpData[2] = Utilities.numToByte(totalPackets, 8);
-			udpData[3] = Utilities.numToByte(totalPackets);
+			udpData[2] = Utilities.intToByte(totalPackets, 8);
+			udpData[3] = Utilities.intToByte(totalPackets, 0);
 			// length
-			udpData[4] = Utilities.numToByte(length, 8);
-			udpData[5] = Utilities.numToByte(length);
+			udpData[4] = Utilities.intToByte(length, 8);
+			udpData[5] = Utilities.intToByte(length, 0);
 			// type
-			udpData[6] = Utilities.numToByte(type, 8);
-			udpData[7] = Utilities.numToByte(type);
-			// checksum
-			udpData[8] = Utilities.numToByte(checksum, 24);
-			udpData[9] = Utilities.numToByte(checksum, 16);
-			udpData[10] = Utilities.numToByte(checksum, 8);
-			udpData[11] = Utilities.numToByte(checksum);
+			udpData[6] = Utilities.intToByte(type, 8);
+			udpData[7] = Utilities.intToByte(type, 0);
 			// data
 			System.arraycopy(data, 0, udpData, CUSTOM_HEADER_LENGTH, length);
 
-			return udpData;
+			return setChecksum(removeChecksum(udpData));
 		}
 		return null;
 	}
-	
+
 	public int getPacketOrder(byte[] udpData) {
-		return (int) (Utilities.byteToNum(udpData[0], 8) | Utilities.byteToNum(udpData[1]));
+		return (int) (Utilities.byteToInt(udpData[0], 8) | Utilities.byteToInt(udpData[1], 0));
 	}
 	
 	public int getTotalPackets(byte[] udpData) {
-		return (int) (Utilities.byteToNum(udpData[2], 8) | Utilities.byteToNum(udpData[3]));
+		return (int) (Utilities.byteToInt(udpData[2], 8) | Utilities.byteToInt(udpData[3], 0));
 	}
 	
 	public int getLength(byte[] udpData) {
-		return (int) (Utilities.byteToNum(udpData[4], 8) | Utilities.byteToNum(udpData[5]));
+		return (int) (Utilities.byteToInt(udpData[4], 8) | Utilities.byteToInt(udpData[5], 0));
 	}
 	
 	public int getType(byte[] udpData) {
-		return (int) (Utilities.byteToNum(udpData[6], 8) | Utilities.byteToNum(udpData[7]));
+		return (int) (Utilities.byteToInt(udpData[6], 8) | Utilities.byteToInt(udpData[7], 0));
 	}
 	
 	public long getChecksum(byte[] udpData) {
-		return (int) (Utilities.byteToNum(udpData[8], 24) | Utilities.byteToNum(udpData[9], 16) | 
-				Utilities.byteToNum(udpData[10], 8) | Utilities.byteToNum(udpData[11]));
+		return (long) (Utilities.byteToLong(udpData[8], 24) | Utilities.byteToLong(udpData[9], 16) | 
+				Utilities.byteToLong(udpData[10], 8) | Utilities.byteToLong(udpData[11], 0));
 	}
 	
 	public byte[] getData(byte[] udpData) {
@@ -109,6 +103,41 @@ public class CustomProtocol {
 	
 	public byte[] buildSignalMessage(int type) {
 		return buildSignalMessage(1, 1, type);
+	}
+	
+	private byte[] removeChecksum(byte[] udpData) {
+		long checksum = 0;
+
+		// checksum
+		udpData[8] = Utilities.longToByte(checksum, 24);
+		udpData[9] = Utilities.longToByte(checksum, 16);
+		udpData[10] = Utilities.longToByte(checksum, 8);
+		udpData[11] = Utilities.longToByte(checksum, 0);
+		
+		return udpData;
+	}
+	
+	private byte[] setChecksum(byte[] udpData) {
+		long checksum = Utilities.calcChecksum(udpData);
+		System.out.println(checksum + "\n");
+		
+		// checksum
+		udpData[8] = Utilities.longToByte(checksum, 24);
+		udpData[9] = Utilities.longToByte(checksum, 16);
+		udpData[10] = Utilities.longToByte(checksum, 8);
+		udpData[11] = Utilities.longToByte(checksum, 0);
+		
+		return udpData;
+	}
+	
+	public byte[] checkChecksum(byte[] udpData) {
+    	long checksum = getChecksum(udpData);
+		System.out.println(checksum + "\n");
+    	udpData = removeChecksum(udpData);
+    	if (Utilities.validateChecksum(udpData, checksum)) {
+    		return udpData;
+    	}		
+		return null;
 	}
 
 }

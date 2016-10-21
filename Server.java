@@ -33,33 +33,6 @@ public class Server extends Thread {
     }
 	
 	private void launch() {
-		/*InetAddress localAddress; 
-		try {			
-			mSocket = new DatagramSocket(mPort);			
-			mSocket.connect(InetAddress.getByName("localhost"), mPort);
-
-	        localAddress = mSocket.getInetAddress();
-
-	        mSocket.disconnect();
-	        mSocket.close();
-	        mSocket = null;
-        }    
-        catch(IOException e)
-        {
-        	mObservable.informUser("Server not launched.\n");
-        	return;
-        }
-		
-		try {			
-			mSocket = new DatagramSocket(mPort, localAddress);
-        	mObservable.informUser("Server socket created for " + localAddress.getHostAddress() + 
-        			". Waiting for incoming data at port " + mPort + "...\n");  
-        }    
-        catch(IOException e)
-        {
-        	mObservable.informUser("Server not launched.\n");
-        	return;
-        }*/
 		
 		try {			
 			mSocket = new DatagramSocket(mPort);
@@ -69,7 +42,7 @@ public class Server extends Thread {
         	mObservable.informUser("Server not launched.\n");
         	return;
         }
-    	mObservable.informUser("Server socket created. Waiting for incoming data at port " + mPort + "...\n");  
+    	mObservable.informUser("Server socket created and waiting for incoming data at port " + mPort + "...\n");  
 		
 		if (mSocket != null) {
 		
@@ -81,14 +54,18 @@ public class Server extends Thread {
 	            {
 	            	mSocket.receive(incoming);
 		        	byte[] data = incoming.getData();
-		        	
 		        	byte[] udpData = Arrays.copyOf(data, incoming.getLength());	 
-		        	int type = mCustomProtocol.getType(udpData);
+
+		        	udpData = mCustomProtocol.checkChecksum(udpData);
+		        	if (udpData == null) {
+		        		continue whileloop;
+		        	}
 		        	
 		        	byte[] sendData;
-		        	String s = "";
 
-		            switchlabel: switch(type) {
+		        	int type = mCustomProtocol.getType(udpData);
+
+		        	switchlabel: switch(type) {
 		    		case CustomProtocol.TYPE_CONNECT: {
 		    			if (mUdpPackets == null) {
 			        		sendData = mCustomProtocol.buildSignalMessage(CustomProtocol.TYPE_CONFIRM);		    				
@@ -114,7 +91,7 @@ public class Server extends Thread {
 		    		}
 		    		case CustomProtocol.TYPE_MESSAGE: {
 		    			byte[] messageData = mCustomProtocol.getData(udpData);
-		    			s = Utilities.bytesToString(messageData);
+		    			String s = Utilities.bytesToString(messageData);
 		    			
 		    	        mObservable.informUser("OK " + incoming.getAddress().getHostAddress() + " " + incoming.getPort() + " - " + s + "\n");
 			            

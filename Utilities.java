@@ -115,6 +115,7 @@ public class Utilities {
 	}
 		
 	public static boolean validateChecksum(byte[] data, long suggested) {
+		if (data == null) return false;
 		long value = calcChecksum(data);
 		return value == suggested;
 	}
@@ -159,20 +160,20 @@ public class Utilities {
 		return newArray;
 	}
 	
-	public static byte numToByte(long value, int shiftRight) {
-		return ((byte) ((value >> shiftRight) & 0xFF));
+	public static byte intToByte(int value, int shiftRight) {
+		return ((byte) ((value >> shiftRight) & 0xff));
 	}
 	
-	public static byte numToByte(long value) {
-		return numToByte(value, 0);
+	public static int byteToInt(byte value, int shiftLeft) {
+		return ((value & 0xff) << shiftLeft);
 	}
 	
-	public static long byteToNum(byte value, long shiftLeft) {
-		return ((value & 0xFF) << shiftLeft);
+	public static byte longToByte(long value, int shiftRight) {
+		return ((byte) ((value >> shiftRight) & 0xffL));
 	}
 	
-	public static long byteToNum(byte value) {
-		return byteToNum(value, 0);
+	public static long byteToLong(byte value, int shiftLeft) {
+		return ((value & 0xffL) << shiftLeft);
 	}
 	
 }

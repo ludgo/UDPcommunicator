@@ -50,7 +50,7 @@ public class Gui extends JFrame {
 		
 		private JButton mStopButton = new JButton("Stop");
 		
-		private JLabel mLaunchServerPortLabel = new JLabel("launch port");
+		private JLabel mLaunchServerPortLabel = new JLabel("server port");
 		private JTextField mLaunchServerPortField = new JTextField(10);
 		
 		private JLabel mClientLabel = new JLabel("Client");
@@ -154,17 +154,17 @@ public class Gui extends JFrame {
 				}
 			});
 			
-			mConnectServerIpLabel.setBounds(430, 70, 100, 30);
+			mConnectServerIpLabel.setBounds(400, 70, 120, 30);
 			add(mConnectServerIpLabel);
 			mConnectServerIpField.setBounds(530, 70, 200, 30);
 			add(mConnectServerIpField);
 			
-			mConnectServerPortLabel.setBounds(430, 100, 100, 30);
+			mConnectServerPortLabel.setBounds(400, 100, 120, 30);
 			add(mConnectServerPortLabel);
 			mConnectServerPortField.setBounds(530, 100, 200, 30);
 			add(mConnectServerPortField);
 			
-			mConnectClientPortLabel.setBounds(430, 130, 100, 30);
+			mConnectClientPortLabel.setBounds(400, 130, 120, 30);
 			add(mConnectClientPortLabel);
 			mConnectClientPortField.setBounds(530, 130, 200, 30);
 			add(mConnectClientPortField);

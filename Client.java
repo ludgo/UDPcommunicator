@@ -68,24 +68,6 @@ public class Client extends Thread {
     }
 	
 	private void connect() {
-        /*try
-        {
-        	mSocket = new DatagramSocket(mPort);
-        } 
-        catch(IOException e)
-        {
-        	mObservable.informUser("Client not connected.\n");
-        	return;
-        }
-        
-       	try {
-			mHost = InetAddress.getByName(mIpAddress);
-		} catch (UnknownHostException e) {
-			halt();
-	       	mObservable.informUser("Client not connected.\n");
-        	return;
- 		}
-        mObservable.informUser("Client socket created for " + mIpAddress + ":" + mPort + "\n");  */
 
 		InetAddress localAddress; 
 		try {			
@@ -121,8 +103,8 @@ public class Client extends Thread {
         	return;
  		}
         mConnected = true;
-        mObservable.informUser("Client socket created for " + localAddress.getHostAddress() + ":" + mClientPort + 
-        		" for server at " + mHost.getHostAddress() + ":" + mServerPort + "\n");  
+        mObservable.informUser("Client socket created at " + localAddress.getHostAddress() + ":" + mClientPort + 
+        		" and connected to server at " + mHost.getHostAddress() + ":" + mServerPort + ".\n");  
         
         int retryCount = 0, noResponseCount = 0;
         loop: while (mConnected) {
@@ -132,8 +114,6 @@ public class Client extends Thread {
 			} catch (InterruptedException e) {				
 				//mObservable.informUser(e.toString());
 			}
-
-//	        mObservable.informUser(reply.getAddress().getHostAddress() + " : " + reply.getPort() + " - " + response + "\n");
         	
         	byte[] sendData = null;
         	
@@ -144,20 +124,20 @@ public class Client extends Thread {
         	}
         	case STATUS_INIT: {
         		sendData = mCustomProtocol.buildSignalMessage(CustomProtocol.TYPE_CONNECT);
+        		mObservable.informUser("Client: Initializing transport...\n");
         		break;
         	}
         	case STATUS_SEND: {
-    	        mObservable.informUser("send\n");
         		for (int i = 0; i < mUdpPackets.length; i++) {
         			if (mUdpPackets[i] != null) {
-    					mObservable.informUser("break\n");
         				sendData = mUdpPackets[i];
+                		mObservable.informUser("Client: Sending fragment " + (i+1) + "/" + mUdpPackets.length + 
+                				" (" + mUdpPackets[i].length + " B) ...\n");
         				break;
         			}
         			if (i == mUdpPackets.length - 1) {
-    					mObservable.informUser("continue\n");
                 		mStatus = STATUS_DONE;
-            			continue loop;        				
+            			continue loop;
         			}
         		}
         		break;
@@ -170,38 +150,62 @@ public class Client extends Thread {
         		continue loop;
         	}
         	
+        	if (noResponseCount > NO_RESPONSE_LIMIT) {
+        		mUdpPackets = null;
+        		mStatus = STATUS_WAIT;
+        		mObservable.informUser("Server not responding or responding corrupted. Terminating...\n");
+    			continue loop;
+        	}      	
+        	if (retryCount > RETRY_LIMIT) {
+        		mUdpPackets = null;
+        		mStatus = STATUS_WAIT;
+        		mObservable.informUser("Sent data too corrupted. Terminating...\n");
+    			continue loop;
+        	}
+        	
         	byte[] replyData = send(sendData);
         	
         	if (replyData == null) {
         		noResponseCount++;
         		continue loop;
         	} else {
+        		
+        		replyData = mCustomProtocol.checkChecksum(replyData);
+	        	if (replyData == null) {
+	        		noResponseCount++;
+	        		continue loop;
+	        	}
+	        	
 	        	int replyType = mCustomProtocol.getType(replyData);
+	        	int replyPacketOrder = mCustomProtocol.getPacketOrder(replyData);
+	        	
 	        	switch(replyType) {
 	        	case CustomProtocol.TYPE_CONFIRM: {
 	        		if (mStatus == STATUS_INIT) {
-	        			mStatus = STATUS_SEND;
+	        			mStatus = STATUS_SEND;	        			
 	        		}
 	        		break;
 	        	}
 	        	case CustomProtocol.TYPE_OK: {
-					mObservable.informUser("server ok\n");
+            		mObservable.informUser("Client: Fragment " + replyPacketOrder + "/" + mUdpPackets.length + 
+            				" delivered.\n");
 	        		int packetOrder = mCustomProtocol.getPacketOrder(replyData);
 	        		mUdpPackets[packetOrder - 1] = null;
 	        		break;
 	        	}
 	        	case CustomProtocol.TYPE_RETRY: {
-					mObservable.informUser("server retry\n");
+            		mObservable.informUser("Client: Fragment " + replyPacketOrder + "/" + mUdpPackets.length + 
+            				" delivered corrupted. Retry.\n");
 	        		retryCount++;
 	        		break;
 	        	}
 	        	case CustomProtocol.TYPE_SUCCESS: {
-					mObservable.informUser("server success\n");
+            		mObservable.informUser("Client: Sending ended with success.\n");
 	        		mStatus = STATUS_WAIT;
 	        		break;
 	        	}
 	        	case CustomProtocol.TYPE_FAIL: {
-					mObservable.informUser("server fail\n");
+            		mObservable.informUser("Client: Sending ended with failure.\n");
 	        		mStatus = STATUS_WAIT;
 	        		break;
 	        	}
@@ -209,11 +213,6 @@ public class Client extends Thread {
 	        		noResponseCount++;
 	        		break;
 	        	}
-        	}
-        	
-        	if (retryCount > RETRY_LIMIT ||
-        			noResponseCount > NO_RESPONSE_LIMIT) {
-        		mStatus = STATUS_WAIT;
         	}
         }
 	}
@@ -223,18 +222,18 @@ public class Client extends Thread {
 		if (mSocket != null) {
 			if (data != null) {
 				try {
-					//mObservable.informUser(Arrays.toString(data) + '\n');
-    		        
+					
 			        DatagramPacket dp = new DatagramPacket(
 			        		data , data.length , mHost , mServerPort);
 			        mSocket.send(dp);
 			         
 			        byte[] buffer = new byte[65536];
-			        DatagramPacket reply = new DatagramPacket(buffer, buffer.length);
+			        DatagramPacket reply = new DatagramPacket(
+			        		buffer, buffer.length);
 			        mSocket.setSoTimeout(RECEIVE_TIMEOUT);
 			        mSocket.receive(reply);
 			        
-			        return reply.getData();
+			        return Arrays.copyOf(reply.getData(), reply.getLength());	 
 		        }
 		         
 		        catch(IOException e)
