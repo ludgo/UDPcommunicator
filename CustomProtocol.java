@@ -11,14 +11,23 @@ public class CustomProtocol {
 	public static final int TYPE_RETRY = 7;
 	public static final int TYPE_SUCCESS = 8;
 	public static final int TYPE_FAIL = 9;
-	
-	public static final int DATA_LENGTH_MIN = 0;
-	public static final int DATA_LENGTH_MAX = 65455;
-	
-	private static final int CUSTOM_HEADER_LENGTH = 12;
 
+	public static final int CUSTOM_HEADER_LENGTH = 12;
+
+	public static final int FRAGMENT_SIZE_MIN = CUSTOM_HEADER_LENGTH + 1;
+	public static final int FRAGMENT_SIZE_MAX = 65507;
+
+	public static final int DATA_LENGTH_MIN = 1;
+	public static final int DATA_LENGTH_MAX = FRAGMENT_SIZE_MAX - CUSTOM_HEADER_LENGTH;
+
+	public static final int B2_MAX = 65535;
+	
+	public static final int ACCEPTED_PORTS_MIN = 8000;
+	public static final int ACCEPTED_PORTS_MAX = 8080;
+
+	
 	private boolean checkParams(int packetOrder, int totalPackets, int length, int type) {
-		// TODO
+
 		switch(type) {
 		case TYPE_CONNECT:
 		case TYPE_CONFIRM:
@@ -30,7 +39,9 @@ public class CustomProtocol {
 		case TYPE_FAIL:{
 			return packetOrder > 0 &&
 					packetOrder <= totalPackets &&
-					length > DATA_LENGTH_MIN &&
+					totalPackets > 0 &&
+					totalPackets <= B2_MAX &&
+					length >= DATA_LENGTH_MIN &&
 					length <= DATA_LENGTH_MAX;
 		}
 		default:
@@ -98,7 +109,7 @@ public class CustomProtocol {
 	}
 	
 	public byte[] buildSignalMessage(int packetOrder, int totalPackets, int type) {
-		return addHeader(packetOrder, totalPackets, type, new byte[]{0,0,0,0});
+		return addHeader(packetOrder, totalPackets, type, new byte[]{0});
 	}
 	
 	public byte[] buildSignalMessage(int type) {
@@ -106,8 +117,8 @@ public class CustomProtocol {
 	}
 	
 	private byte[] removeChecksum(byte[] udpData) {
+		
 		long checksum = 0;
-
 		// checksum
 		udpData[8] = Utilities.longToByte(checksum, 24);
 		udpData[9] = Utilities.longToByte(checksum, 16);
@@ -118,8 +129,8 @@ public class CustomProtocol {
 	}
 	
 	private byte[] setChecksum(byte[] udpData) {
-		long checksum = Utilities.calcChecksum(udpData);
 		
+		long checksum = Utilities.calcChecksum(udpData);
 		// checksum
 		udpData[8] = Utilities.longToByte(checksum, 24);
 		udpData[9] = Utilities.longToByte(checksum, 16);

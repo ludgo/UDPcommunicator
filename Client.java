@@ -42,20 +42,24 @@ public class Client extends Thread {
 		mStatus = STATUS_WAIT;
 	}
 	
-	public void setData(int type, byte[] data, String name) {
+	public void setData(int type, byte[] data, String name, int maxFragmentSize) {
 
 		byte[] nameData = Utilities.stringToBytes(name);
 		
 		ArrayList<byte[]> packets = null;
 		if (nameData != null) {
-			packets = Utilities.addDataParts(packets, nameData, CustomProtocol.DATA_LENGTH_MAX);			
+			packets = Utilities.addDataParts(packets, nameData, maxFragmentSize - CustomProtocol.CUSTOM_HEADER_LENGTH);			
 		}
-		packets = Utilities.addDataParts(packets, data, CustomProtocol.DATA_LENGTH_MAX);
+		packets = Utilities.addDataParts(packets, data, maxFragmentSize - CustomProtocol.CUSTOM_HEADER_LENGTH);
 		
 		int totalPackets = packets.size();
 		mUdpPackets = new byte[totalPackets][];
 		for (int i = 0; i < totalPackets; i++) {
 			mUdpPackets[i] = mCustomProtocol.addHeader(i+1, totalPackets, type, packets.get(i));
+			if (mUdpPackets[i] == null) {
+				mObservable.informUser("Client: Corrupted data.\n");
+				return;
+			}
 		}
 		
 		mStatus = STATUS_INIT;
@@ -260,5 +264,9 @@ public class Client extends Thread {
 			mObservable.informUser("Client is busy.\n");
 			return false;
 		}
+	}
+	
+	public int getUsedPort() {
+		return mClientPort;
 	}
 }

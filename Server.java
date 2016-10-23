@@ -73,6 +73,7 @@ public class Server extends Thread {
 		        	byte[] udpData = Arrays.copyOf(data, incoming.getLength());	 
 
 		        	byte[] sendData;
+		        	boolean ended = false;
 
 		        	udpData = mCustomProtocol.checkChecksum(udpData);
 		        	if (udpData == null) {
@@ -107,12 +108,10 @@ public class Server extends Thread {
 				    			
 				    			switch(type) {
 				    			case CustomProtocol.TYPE_MESSAGE: {
-				    				receiveMessage(client);
 				    				sendData = mCustomProtocol.buildSignalMessage(CustomProtocol.TYPE_SUCCESS);
 				    				break;
 				    			}
 				    			case CustomProtocol.TYPE_FILE: {
-				    				receiveFile();
 				    				sendData = mCustomProtocol.buildSignalMessage(CustomProtocol.TYPE_SUCCESS);
 				    				break;
 				    			}
@@ -122,8 +121,7 @@ public class Server extends Thread {
 				    			}
 				    			}
 				    			
-				    	        client = null;
-				    	        mUdpPackets = null;
+				    			ended = true;
 				        	}
 			        		break;
 			    		}
@@ -138,10 +136,11 @@ public class Server extends Thread {
 			    				mUdpPackets = new byte[totalPackets][];
 			    				type = receivedType;
 			    			}
-			    			mUdpPackets[packetOrder - 1] = part;
-			    			
-	                		mObservable.informUser("Server: Received fragment " + packetOrder + "/" + totalPackets + 
-	                				" (" + udpData.length + " B).\n");
+			    			if (mUdpPackets[packetOrder - 1] == null) {
+			    				mUdpPackets[packetOrder - 1] = part;
+		                		mObservable.informUser("Server: Received fragment " + packetOrder + "/" + totalPackets + 
+		                				" (" + udpData.length + " B).\n");
+			    			}			    			
 	
 			        		sendData = mCustomProtocol.buildSignalMessage(packetOrder, totalPackets, CustomProtocol.TYPE_OK);
 			                break;
@@ -154,6 +153,25 @@ public class Server extends Thread {
 		        	}
 		            
 		            send(sendData, incoming.getAddress(), incoming.getPort());
+		            
+		            if (ended) {
+		            	switch(type) {
+		    			case CustomProtocol.TYPE_MESSAGE: {
+		    				receiveMessage(client);
+		    				break;
+		    			}
+		    			case CustomProtocol.TYPE_FILE: {
+		    				receiveFile();
+		    				break;
+		    			}
+		    			default: {
+		    				break;
+		    			}
+		    			}
+		            	
+		    	        client = null;
+		    	        mUdpPackets = null;
+		            }
 	            }
 	        }
 	         
@@ -210,5 +228,7 @@ public class Server extends Thread {
 		mSocket = null;
 	}
 	
-	
+	public int getUsedPort() {
+		return mPort;
+	}
 }

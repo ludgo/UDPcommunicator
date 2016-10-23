@@ -99,7 +99,7 @@ public class Gui extends JFrame {
 					if (port == -1) {
 						mOutputArea.append("Not a valid port!\n");
 					} else if (!communicator.launchServer(port, panel)) {
-						mOutputArea.append("Server already running!\n");
+						mOutputArea.append("Server already running or port is used!\n");
 					}
 				}
 			});
@@ -137,7 +137,7 @@ public class Gui extends JFrame {
 					} else if (serverPort == -1 || clientPort == -1) {
 						mOutputArea.append("Not a valid port!\n");
 					} else if (!communicator.connectClient(serverIpAddress, serverPort, clientPort, panel)) {
-						mOutputArea.append("Client already created!\n");
+						mOutputArea.append("Client already created or port is used!\n");
 					}
 				}
 			});
@@ -179,8 +179,9 @@ public class Gui extends JFrame {
 			mSendFileButton.addActionListener(new ActionListener() {
 				@Override
 				public void actionPerformed(ActionEvent arg0) {
-
-					if (!communicator.sendFile()) {
+					
+					int maxFragmentSize = getMaxFragment(mSizeField);
+					if (!communicator.sendFile(maxFragmentSize)) {
 						mOutputArea.append("File not sent.\n");
 					}
 				}
@@ -199,7 +200,10 @@ public class Gui extends JFrame {
 					String message = getMessage(mInputArea);
 					if (message == null) {
 						mOutputArea.append("Message empty!\n");
-					} else if (!communicator.sendMessage(message)) {
+						return;
+					}
+					int maxFragmentSize = getMaxFragment(mSizeField);
+					if (!communicator.sendMessage(message, maxFragmentSize)) {
 						mOutputArea.append("Message not sent.\n");
 					}
 				}
@@ -210,15 +214,6 @@ public class Gui extends JFrame {
 			add(mOutputLabel);
 			mOutputPane.setBounds(100, 330, 1000, 300);
 			add(mOutputPane);
-			
-			
-			/******************************************************/
-			// TESTING
-			mLaunchServerPortField.setText("7777");
-			mConnectServerIpField.setText("localhost");
-			mConnectServerPortField.setText("7777");
-			mConnectClientPortField.setText("7778");
-			/******************************************************/
 		}
 
 		@Override
@@ -254,7 +249,8 @@ public class Gui extends JFrame {
 		private int getPort(JTextField field) {
 			try {
 				int number = Integer.parseInt(field.getText());
-				if (number > 0 && number < 65535) {
+				if (number >= CustomProtocol.ACCEPTED_PORTS_MIN && 
+						number <= CustomProtocol.ACCEPTED_PORTS_MAX) {
 					return number;
 				}
 				// Not positive
@@ -264,6 +260,23 @@ public class Gui extends JFrame {
 				// String in the field is not integer type
 			}
 			return -1;
+		}
+		
+		private int getMaxFragment(JTextField field) {
+			try {
+				int number = Integer.parseInt(field.getText());
+				if (number >= CustomProtocol.FRAGMENT_SIZE_MIN && 
+						number <= CustomProtocol.FRAGMENT_SIZE_MAX) {
+					return number;
+				}
+				// Not positive
+			} catch (NullPointerException e) {
+				// The field is null
+			} catch (NumberFormatException e) {
+				// String in the field is not integer type
+			}
+			field.setText(Integer.toString(CustomProtocol.FRAGMENT_SIZE_MAX));
+			return CustomProtocol.FRAGMENT_SIZE_MAX;
 		}
 		
 		private String getMessage(JTextArea field) {

@@ -88,7 +88,8 @@ public class Utilities {
         	
             File file = chooser.getSelectedFile();
 
-            if ((file != null) && file.exists()) {
+            if (file == null) return null;
+            if (file.exists()) {
             	
                 int response = JOptionPane.showConfirmDialog(panel,
                 		file.getName() + " already exists. Do you want to replace it?",
