@@ -9,6 +9,9 @@ import java.util.Observer;
 
 import javax.swing.JPanel;
 
+/**
+ * A server class in UDP client-server communication on a separate Thread
+ */
 public class Server extends Thread {
 	
 	private static final int EMPTY_REQUEST_LIMIT = 5;

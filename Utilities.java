@@ -242,7 +242,7 @@ public class Utilities {
 	
 	/**
 	 * Obtain formatted current time
-	 * @return <year>-<month>-<day> <hours>:<minutes>:<seconds>
+	 * @return year-month-day hours:minutes:seconds
 	 */
 	public static String getCurrentTime() {
 		return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());

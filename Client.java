@@ -9,6 +9,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Observer;
 
+/**
+ * A client class in UDP client-server communication on a separate Thread
+ */
 public class Client extends Thread {
 	
 	public static final int STATUS_WAIT = 10;
@@ -287,6 +290,7 @@ public class Client extends Thread {
 	}
 	
 	public void halt() {
+		mConnected = false;
 		mSocket.close();		
 		mSocket = null;
 		mHost = null;
