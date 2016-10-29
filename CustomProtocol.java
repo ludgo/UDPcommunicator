@@ -1,8 +1,11 @@
 package pks;
 
-
+/*
+ * A protocol description and methods as stated in documentation specification
+ */
 public class CustomProtocol {
 	
+	// Type types
 	public static final int TYPE_CONNECT = 1;
 	public static final int TYPE_CONFIRM = 2;
 	public static final int TYPE_MESSAGE = 3;
@@ -20,12 +23,15 @@ public class CustomProtocol {
 	public static final int DATA_LENGTH_MIN = 1;
 	public static final int DATA_LENGTH_MAX = FRAGMENT_SIZE_MAX - CUSTOM_HEADER_LENGTH;
 
+	// Max. value in 2 bytes
 	public static final int B2_MAX = 65535;
 	
 	public static final int ACCEPTED_PORTS_MIN = 8000;
 	public static final int ACCEPTED_PORTS_MAX = 8080;
 
-	
+	/**
+	 * Validate whether a protocol is to be used properly
+	 */
 	private boolean checkParams(int packetOrder, int totalPackets, int length, int type) {
 
 		switch(type) {
@@ -50,6 +56,10 @@ public class CustomProtocol {
 		}
 	}
 	
+	/**
+	 * Add header to data byte array
+	 * @return A byte array with prepended header if correct params, null otherwise
+	 */
 	public byte[] addHeader(int packetOrder, int totalPackets, int type, byte[] data) {
 		
 		if (data == null) return null;
@@ -109,7 +119,7 @@ public class CustomProtocol {
 	}
 	
 	public byte[] buildSignalMessage(int packetOrder, int totalPackets, int type) {
-		return addHeader(packetOrder, totalPackets, type, new byte[]{0});
+		return addHeader(packetOrder, totalPackets, type, new byte[DATA_LENGTH_MIN]);
 	}
 	
 	public byte[] buildSignalMessage(int type) {
@@ -128,6 +138,9 @@ public class CustomProtocol {
 		return udpData;
 	}
 	
+	/**
+	 * Add custom protocol checksum to prepared UDP data
+	 */
 	private byte[] setChecksum(byte[] udpData) {
 		
 		long checksum = Utilities.calcChecksum(udpData);
@@ -140,12 +153,15 @@ public class CustomProtocol {
 		return udpData;
 	}
 	
+	/**
+	 * Check custom protocol checksum from received UDP data
+	 */
 	public byte[] checkChecksum(byte[] udpData) {
     	long checksum = getChecksum(udpData);
     	udpData = removeChecksum(udpData);
     	if (Utilities.validateChecksum(udpData, checksum)) {
     		return udpData;
-    	}		
+    	}
 		return null;
 	}
 

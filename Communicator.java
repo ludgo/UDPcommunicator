@@ -5,6 +5,9 @@ import java.util.Observer;
 
 import javax.swing.JPanel;
 
+/**
+ * A UDP communicator controller
+ */
 public class Communicator extends JPanel {
 	
 	private static final long serialVersionUID = 1L;
@@ -18,7 +21,9 @@ public class Communicator extends JPanel {
 		new Gui(c);		
 	}
 	
-	
+	/**
+	 * Launch server if not already and port not used by client
+	 */
 	public boolean launchServer(int port, Observer observer) {
 		
 		if (!isServerLaunched() &&
@@ -45,6 +50,9 @@ public class Communicator extends JPanel {
 		return mServer != null;
 	}
 	
+	/**
+	 * Launch client if not already and port not used by server
+	 */
 	public boolean connectClient(String serverIpAddress, int serverPort, int clientPort, Observer observer) {
 		
 		if (!isClientConnected() &&
@@ -71,19 +79,25 @@ public class Communicator extends JPanel {
 		return mClient != null;
 	}
 	
-	public boolean sendMessage(String message, int maxFragmentSize) {
+	/**
+	 * Pass message and sending parameters to client
+	 */
+	public boolean sendMessage(String message, int maxFragmentSize, boolean corrupted) {
 		
 		if (isClientConnected()) {
 			if (mClient.isAvailable()) {
 				byte[] messageData = Utilities.stringToBytes(message);
-				mClient.setData(CustomProtocol.TYPE_MESSAGE, messageData, null, maxFragmentSize);
+				mClient.setData(CustomProtocol.TYPE_MESSAGE, messageData, null, maxFragmentSize, corrupted);
 			}
 			return true;
 		}
 		return false;
 	}
 	
-	public boolean sendFile(int maxFragmentSize) {
+	/**
+	 * Prompt user with pick file option and pass reference to file and sending parameters to client
+	 */
+	public boolean sendFile(int maxFragmentSize, boolean corrupted) {
 		
 		if (isClientConnected()) {
 			File file = Utilities.pickFile(this);
@@ -92,7 +106,7 @@ public class Communicator extends JPanel {
 					byte[] fileData = Utilities.fileToBytes(file);
 					String fileName = Utilities.getFileName(file);
 					if (fileData != null) {
-						mClient.setData(CustomProtocol.TYPE_FILE, fileData, fileName, maxFragmentSize);
+						mClient.setData(CustomProtocol.TYPE_FILE, fileData, fileName, maxFragmentSize, corrupted);
 					} else {
 						return false;
 					}

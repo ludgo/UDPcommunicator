@@ -22,6 +22,10 @@ public class Server extends Thread {
 	
 	private JPanel mPanel;
 	
+	/**
+	 * @param port A server port
+	 * @param o An observer to inform user
+	 */
 	public Server(int port, Observer o, JPanel panel) {
 		mCustomProtocol = new CustomProtocol();
 		mPort = port;
@@ -36,7 +40,8 @@ public class Server extends Thread {
 	
 	private void launch() {
 		
-		try {			
+		try {
+			// Tight socket to port
 			mSocket = new DatagramSocket(mPort);
         }    
         catch(IOException e)
@@ -59,13 +64,16 @@ public class Server extends Thread {
 	            whileloop: while(true)
 	            {
 		        	if (client == null) {
+		        		// Reset
 		        		type = -1;
 		        		emptyRequestCount = 0;
 		        	}
 		        	
+		        	// Wait for client
 		        	mSocket.receive(incoming);
 		        	byte[] data = incoming.getData();
 		        	
+		        	// Only single client at once
 		        	if (client != null && 
 		        			!client.equals(Utilities.formatHost(incoming))) {
 		        		continue whileloop;
@@ -75,14 +83,15 @@ public class Server extends Thread {
 		        	byte[] sendData;
 		        	boolean ended = false;
 
+		        	// Validate checksum
 		        	udpData = mCustomProtocol.checkChecksum(udpData);
 		        	if (udpData == null) {
-		        		
+		        		// Received corrupted data
 		        		emptyRequestCount++;
 		        		sendData = mCustomProtocol.buildSignalMessage(CustomProtocol.TYPE_RETRY);
 		        		
 		        	} else if (emptyRequestCount > EMPTY_REQUEST_LIMIT) {
-		        		
+		        		// Too much bad requests
 		        		client = null;
 		        		sendData = mCustomProtocol.buildSignalMessage(CustomProtocol.TYPE_FAIL);
 		        		mObservable.informUser("Server: Transport aborted. Waiting for client exceeded limit.\n");
@@ -91,14 +100,17 @@ public class Server extends Thread {
 		        			        	
 			        	int receivedType = mCustomProtocol.getType(udpData);
 	
+			        	// Determine response
 			        	switchlabel: switch(receivedType) {
 			    		case CustomProtocol.TYPE_CONNECT: {
 			    			if (mUdpPackets == null) {
+			    				// Client initialized communication, tight to it
 			    				client = Utilities.formatHost(incoming);
 				        		sendData = mCustomProtocol.buildSignalMessage(CustomProtocol.TYPE_CONFIRM);		    				
 				        	} else {
 				        		
 				    			for (int i = 0; i < mUdpPackets.length; i++) {
+				    				// Until all parts delivered, receive them
 				    				if (mUdpPackets[i] == null) {
 						        		emptyRequestCount++;
 						        		sendData = mCustomProtocol.buildSignalMessage(CustomProtocol.TYPE_CONFIRM);		    				
@@ -106,6 +118,7 @@ public class Server extends Thread {
 				    				}
 				    			}
 				    			
+				    			// All parts delivered, respond end status
 				    			switch(type) {
 				    			case CustomProtocol.TYPE_MESSAGE: {
 				    				sendData = mCustomProtocol.buildSignalMessage(CustomProtocol.TYPE_SUCCESS);
@@ -132,6 +145,7 @@ public class Server extends Thread {
 			    			int totalPackets = mCustomProtocol.getTotalPackets(udpData);
 			    			byte[] part = mCustomProtocol.getData(udpData);
 	
+			    			// Process data part
 			    			if (mUdpPackets == null) {
 			    				mUdpPackets = new byte[totalPackets][];
 			    				type = receivedType;
@@ -152,9 +166,11 @@ public class Server extends Thread {
 			    		}
 		        	}
 		            
+		        	// Respond in a proper way
 		            send(sendData, incoming.getAddress(), incoming.getPort());
 		            
 		            if (ended) {
+		            	// After end, pass processed, received data to user
 		            	switch(type) {
 		    			case CustomProtocol.TYPE_MESSAGE: {
 		    				receiveMessage(client);
@@ -196,6 +212,9 @@ public class Server extends Thread {
        }
 	}
 	
+	/**
+	 * Show message at GUI
+	 */
 	private void receiveMessage(String client) {
 		
 		byte[] messageData = Utilities.joinArrays(mUdpPackets);
@@ -208,6 +227,9 @@ public class Server extends Thread {
 		mObservable.informUser("\n");
 	}
 	
+	/**
+	 * Prompt user with save file option and show path to it at GUI
+	 */
 	private void receiveFile() {
 		
 		String fileName = Utilities.bytesToString(mUdpPackets[0]);

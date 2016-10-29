@@ -18,8 +18,15 @@ import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
+/**
+ * A helper class with util methods
+ */
 public class Utilities {
-		
+	
+	/**
+	 * Choose file at system explorer
+	 * @return A selected file
+	 */
 	public static File pickFile(JPanel panel) {
 		
 		final JFileChooser chooser = new JFileChooser();
@@ -33,6 +40,9 @@ public class Utilities {
         return null;
 	}
 	
+	/**
+	 * Convert UTF-8 formatted string to byte array
+	 */
 	public static byte[] stringToBytes(String string) {
 		if (string != null) {
 	        return string.getBytes(Charset.forName("UTF-8"));
@@ -40,6 +50,9 @@ public class Utilities {
         return null;
 	}
 	
+	/**
+	 * Convert byte array to UTF-8 formatted string
+	 */
 	public static String bytesToString(byte[] data) {
 		if (data != null) {
 	        try {
@@ -52,6 +65,9 @@ public class Utilities {
         return null;
 	}
 	
+	/**
+	 * Convert file to byte array
+	 */
 	public static byte[] fileToBytes(File file) {
 		if (file != null) {
 			byte[] fileData;
@@ -69,6 +85,9 @@ public class Utilities {
         return null;
 	}
 	
+	/**
+	 * Obtain file name (including extension)
+	 */
 	public static String getFileName(File file) {
 		if (file != null) {
 			Path path = Paths.get(file.getAbsolutePath());
@@ -77,6 +96,10 @@ public class Utilities {
 		return null;
 	}
 	
+	/**
+	 * Save file by system explorer
+	 * @return A absolute file path on success, null otherwise
+	 */
 	public static String saveFile(JPanel panel, byte[] fileData, String fileName) {        
         
         JFileChooser chooser = new JFileChooser();
@@ -115,18 +138,27 @@ public class Utilities {
         return null;
 	}
 	
+	/**
+	 * Calculate checksum of byte array
+	 */
 	public static long calcChecksum(byte[] data) {
 		Checksum checksum = new CRC32();		
 		checksum.update(data, 0, data.length);				 
 		return checksum.getValue();
 	}
-		
+	
+	/**
+	 * Check whether specified byte array checksum is valid or not
+	 */
 	public static boolean validateChecksum(byte[] data, long suggested) {
 		if (data == null) return false;
 		long value = calcChecksum(data);
 		return value == suggested;
 	}
 	
+	/**
+	 * Divide byte array into parts of maximal length and append them to array list of byte arrays
+	 */
 	public static ArrayList<byte[]> addDataParts(ArrayList<byte[]> parts, byte[] data, int maxLength) {
 		if (parts == null) {
 			parts = new ArrayList<>();			
@@ -153,6 +185,10 @@ public class Utilities {
 		return parts;
 	}
 	
+	/**
+	 * Merge array of byte arrays
+	 * @return A single joined array
+	 */
 	public static byte[] joinArrays(byte[][] arrays) {
 		int sumLength = 0;
 		for (int i = 0; i < arrays.length; i++) {
@@ -167,29 +203,49 @@ public class Utilities {
 		return newArray;
 	}
 	
+	/**
+	 * Create byte from specified part of integer
+	 */
 	public static byte intToByte(int value, int shiftRight) {
 		return ((byte) ((value >> shiftRight) & 0xff));
 	}
 	
+	/**
+	 * Create integer from byte with specified bit shift
+	 */
 	public static int byteToInt(byte value, int shiftLeft) {
 		return ((value & 0xff) << shiftLeft);
 	}
 	
+	/**
+	 * Create byte from specified part of long
+	 */
 	public static byte longToByte(long value, int shiftRight) {
 		return ((byte) ((value >> shiftRight) & 0xffL));
 	}
 	
+	/**
+	 * Create long from byte with specified bit shift
+	 */
 	public static long byteToLong(byte value, int shiftLeft) {
 		return ((value & 0xffL) << shiftLeft);
 	}
 	
+	/**
+	 * Format datagram packet sender info
+	 * @return <ip address>:<port>
+	 */
 	public static String formatHost(DatagramPacket packet) {
 		if (packet == null) return null;
 		return packet.getAddress().getHostAddress() + ":" + packet.getPort();
 	}
 	
+	/**
+	 * Obtain formatted current time
+	 * @return <year>-<month>-<day> <hours>:<minutes>:<seconds>
+	 */
 	public static String getCurrentTime() {
-		return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date());
+		return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
 	}
 	
 }

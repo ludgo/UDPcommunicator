@@ -8,6 +8,7 @@ import java.util.Observer;
 import java.util.regex.Pattern;
 
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -16,7 +17,9 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
 
-
+/**
+ * A graphical user interface to UDP communicator
+ */
 public class Gui extends JFrame {
 
 	private static final long serialVersionUID = 1L;
@@ -36,11 +39,11 @@ public class Gui extends JFrame {
 		
 		setTitle("UDP communication");
 		setVisible(true);
-
-		
 	}
 
-
+	/**
+	 * A panel with all elements
+	 */
 	private class MyCustomizedPanel extends JPanel implements Observer {
 		
 		private static final long serialVersionUID = 1L;
@@ -71,6 +74,8 @@ public class Gui extends JFrame {
 		private JTextField mSizeField = new JTextField(10);
 		
 		private JButton mSendFileButton = new JButton("Send file");
+
+		private JCheckBox mCorruptedFragmantBox = new JCheckBox("Corrupted fragment");
 
 		private JLabel mInputLabel = new JLabel("Input");
 		private JTextArea mInputArea = new JTextArea(30, 60);
@@ -181,11 +186,14 @@ public class Gui extends JFrame {
 				public void actionPerformed(ActionEvent arg0) {
 					
 					int maxFragmentSize = getMaxFragment(mSizeField);
-					if (!communicator.sendFile(maxFragmentSize)) {
+					if (!communicator.sendFile(maxFragmentSize, sendCorruptedFragment())) {
 						mOutputArea.append("File not sent.\n");
 					}
 				}
 			});
+			
+			mCorruptedFragmantBox.setBounds(830, 130, 300, 30);
+			add(mCorruptedFragmantBox);
 			
 			mInputLabel.setBounds(20, 170, 50, 100);
 			add(mInputLabel);
@@ -203,7 +211,7 @@ public class Gui extends JFrame {
 						return;
 					}
 					int maxFragmentSize = getMaxFragment(mSizeField);
-					if (!communicator.sendMessage(message, maxFragmentSize)) {
+					if (!communicator.sendMessage(message, maxFragmentSize, sendCorruptedFragment())) {
 						mOutputArea.append("Message not sent.\n");
 					}
 				}
@@ -223,6 +231,9 @@ public class Gui extends JFrame {
 			}
 		}
 		
+		/**
+		 * @return IPv4 address in decimal dot format or localhost, null otherwise
+		 */
 		private String getIpAddress(JTextField field) {
 			String ipAddress;
 			try {
@@ -246,6 +257,9 @@ public class Gui extends JFrame {
 			return ipAddress;
 		}
 		
+		/**
+		 * @return A port in the protocol specified range, -1 otherwise
+		 */
 		private int getPort(JTextField field) {
 			try {
 				int number = Integer.parseInt(field.getText());
@@ -262,6 +276,9 @@ public class Gui extends JFrame {
 			return -1;
 		}
 		
+		/**
+		 * @return A user specified max fragment length from field if not empty, max. possible otherwise
+		 */
 		private int getMaxFragment(JTextField field) {
 			try {
 				int number = Integer.parseInt(field.getText());
@@ -279,6 +296,9 @@ public class Gui extends JFrame {
 			return CustomProtocol.FRAGMENT_SIZE_MAX;
 		}
 		
+		/**
+		 * @return A message from field if not empty, null otherwise
+		 */
 		private String getMessage(JTextArea field) {
 			String message;
 			try {
@@ -288,6 +308,13 @@ public class Gui extends JFrame {
 				// The field is null
 			}
 			return null;
+		}
+		
+		/**
+		 * A method to simulate data being corrupted on the way
+		 */
+		private boolean sendCorruptedFragment() {
+			return mCorruptedFragmantBox.isSelected();
 		}
 
 		

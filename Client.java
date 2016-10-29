@@ -32,7 +32,13 @@ public class Client extends Thread {
 	private int mServerPort;
 	private int mClientPort;
 	private MyObservable mObservable;
-		
+	
+	/**
+	 * @param serverIpAddress A destination IP address
+	 * @param serverPort A server port
+	 * @param clientPort A client port
+	 * @param o An observer to inform user
+	 */
 	public Client(String serverIpAddress, int serverPort, int clientPort, Observer o) {
 		mCustomProtocol = new CustomProtocol();
 		mServerIpAddress = serverIpAddress;
@@ -42,16 +48,19 @@ public class Client extends Thread {
 		mStatus = STATUS_WAIT;
 	}
 	
-	public void setData(int type, byte[] data, String name, int maxFragmentSize) {
+	public void setData(int type, byte[] data, String name, int maxFragmentSize, boolean corrupted) {
 
 		byte[] nameData = Utilities.stringToBytes(name);
 		
 		ArrayList<byte[]> packets = null;
 		if (nameData != null) {
+			// Name if first in case of file
 			packets = Utilities.addDataParts(packets, nameData, maxFragmentSize - CustomProtocol.CUSTOM_HEADER_LENGTH);			
 		}
+		// Fragmentate data
 		packets = Utilities.addDataParts(packets, data, maxFragmentSize - CustomProtocol.CUSTOM_HEADER_LENGTH);
 		
+		// Add header to all fragments
 		int totalPackets = packets.size();
 		mUdpPackets = new byte[totalPackets][];
 		for (int i = 0; i < totalPackets; i++) {
@@ -60,6 +69,11 @@ public class Client extends Thread {
 				mObservable.informUser("Client: Corrupted data.\n");
 				return;
 			}
+		}
+		
+		if (corrupted) {
+			// Add 1 to first byte after checksum calculated in case of send corrupted data simulation
+			mUdpPackets[0][0] = (byte) (mUdpPackets[0][0] + 1);
 		}
 		
 		mStatus = STATUS_INIT;
@@ -73,6 +87,7 @@ public class Client extends Thread {
 	
 	private void connect() {
 
+		// Find out IP address to be used
 		InetAddress localAddress; 
 		try {			
 			mSocket = new DatagramSocket(mClientPort);			
@@ -90,7 +105,8 @@ public class Client extends Thread {
         	return;
         }
 		
-		try {			
+		try {
+			// Tight socket to port and IP address
 			mSocket = new DatagramSocket(mClientPort, localAddress);
         }    
         catch(IOException e)
@@ -100,6 +116,7 @@ public class Client extends Thread {
         }
 
 		try {
+			// Determine host
 			mHost = InetAddress.getByName(mServerIpAddress);
 		} catch (UnknownHostException e) {
 			halt();
@@ -121,18 +138,22 @@ public class Client extends Thread {
         	
         	byte[] sendData = null;
         	
+        	// Determine request
         	switch(mStatus) {
         	case STATUS_WAIT: {
+        		// Nothing to do
         		retryCount = noResponseCount = 0;
         		continue loop;
         	}
         	case STATUS_INIT: {
+        		// Initialize communication
         		sendData = mCustomProtocol.buildSignalMessage(CustomProtocol.TYPE_CONNECT);
         		mObservable.informUser("Client: Initializing transport...\n");
         		break;
         	}
         	case STATUS_SEND: {
         		for (int i = 0; i < mUdpPackets.length; i++) {
+    				// Until all parts delivered, send them
         			if (mUdpPackets[i] != null) {
         				sendData = mUdpPackets[i];
                 		mObservable.informUser("Client: Sending fragment " + (i+1) + "/" + mUdpPackets.length + 
@@ -140,6 +161,7 @@ public class Client extends Thread {
         				break;
         			}
         			if (i == mUdpPackets.length - 1) {
+        				// All fragments sent and received by server
                 		mStatus = STATUS_DONE;
             			continue loop;
         			}
@@ -147,6 +169,7 @@ public class Client extends Thread {
         		break;
         	}
         	case STATUS_DONE: {
+        		// All fragments sent, just wait for final status
         		sendData = mCustomProtocol.buildSignalMessage(CustomProtocol.TYPE_CONNECT);
         		break;
         	}
@@ -155,25 +178,30 @@ public class Client extends Thread {
         	}
         	
         	if (noResponseCount > NO_RESPONSE_LIMIT) {
+        		// Limit times server not responding
         		mUdpPackets = null;
         		mStatus = STATUS_WAIT;
         		mObservable.informUser("Server not responding or responding corrupted. Terminating...\n");
     			continue loop;
         	}      	
         	if (retryCount > RETRY_LIMIT) {
+        		// Limit retry count
         		mUdpPackets = null;
         		mStatus = STATUS_WAIT;
         		mObservable.informUser("Sent data too corrupted. Terminating...\n");
     			continue loop;
         	}
         	
+        	// Send proper request, obtain reply
         	byte[] replyData = send(sendData);
         	
         	if (replyData == null) {
+        		// No reply
         		noResponseCount++;
         		continue loop;
         	} else {
         		
+	        	// Validate checksum
         		replyData = mCustomProtocol.checkChecksum(replyData);
 	        	if (replyData == null) {
 	        		noResponseCount++;
@@ -182,14 +210,17 @@ public class Client extends Thread {
 	        	
 	        	int replyPacketOrder = mCustomProtocol.getPacketOrder(replyData);
 	        	
+	        	// Resolve reply
 	        	switch(mCustomProtocol.getType(replyData)) {
 	        	case CustomProtocol.TYPE_CONFIRM: {
 	        		if (mStatus == STATUS_INIT) {
+	        			// Initialization confirmed, start sending
 	        			mStatus = STATUS_SEND;	        			
 	        		}
 	        		break;
 	        	}
 	        	case CustomProtocol.TYPE_OK: {
+	        		// A single fragment delivered
             		mObservable.informUser("Client: Fragment " + replyPacketOrder + "/" + mUdpPackets.length + 
             				" delivered.\n");
 	        		int packetOrder = mCustomProtocol.getPacketOrder(replyData);
@@ -197,17 +228,20 @@ public class Client extends Thread {
 	        		break;
 	        	}
 	        	case CustomProtocol.TYPE_RETRY: {
+	        		// A single fragment delivered corrupted
             		mObservable.informUser("Client: Fragment " + replyPacketOrder + "/" + mUdpPackets.length + 
             				" delivered corrupted. Retry.\n");
 	        		retryCount++;
 	        		break;
 	        	}
 	        	case CustomProtocol.TYPE_SUCCESS: {
+	        		// Server announces end with success
 	    			mObservable.informUser("Client: Sending ended with success.\n");
 	        		mStatus = STATUS_WAIT;
 	        		break;
 	        	}
 	        	case CustomProtocol.TYPE_FAIL: {
+	        		// Server announces end with failure
             		mObservable.informUser("Client: Sending ended with failure.\n");
 	        		mStatus = STATUS_WAIT;
 	        		break;
@@ -229,7 +263,8 @@ public class Client extends Thread {
 			        DatagramPacket dp = new DatagramPacket(
 			        		data , data.length , mHost , mServerPort);
 			        mSocket.send(dp);
-			         
+			        
+			        // Wait for response
 			        byte[] buffer = new byte[65536];
 			        DatagramPacket reply = new DatagramPacket(
 			        		buffer, buffer.length);
@@ -257,6 +292,9 @@ public class Client extends Thread {
 		mHost = null;
 	}
 	
+	/**
+	 * Check whether client available or working on something else
+	 */
 	public boolean isAvailable() {
 		if (mStatus == STATUS_WAIT) {
 			return true;
