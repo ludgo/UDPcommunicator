@@ -14,6 +14,9 @@ import javax.swing.JPanel;
  */
 public class Server extends Thread {
 	
+	private int counterAck;
+	private int counterNack;
+	
 	private static final int EMPTY_REQUEST_LIMIT = 5;
 	
 	private byte[][] mUdpPackets = null;
@@ -42,6 +45,8 @@ public class Server extends Thread {
     }
 	
 	private void launch() {
+		
+		counterAck = counterNack = 0;
 		
 		try {
 			// Tight socket to port
@@ -92,6 +97,7 @@ public class Server extends Thread {
 		        		// Received corrupted data
 		        		emptyRequestCount++;
 		        		sendData = mCustomProtocol.buildSignalMessage(CustomProtocol.TYPE_RETRY);
+	    				counterNack++;
 		        		
 		        	} else if (emptyRequestCount > EMPTY_REQUEST_LIMIT) {
 		        		// Too much bad requests
@@ -137,6 +143,9 @@ public class Server extends Thread {
 				    			}
 				    			}
 				    			
+				    			mObservable.informUser("-------- Counter ACK: " + counterAck + "\n");
+				    			mObservable.informUser("-------- Counter NACK: " + counterNack + "\n");
+				    			
 				    			ended = true;
 				        	}
 			        		break;
@@ -160,6 +169,7 @@ public class Server extends Thread {
 			    			}			    			
 	
 			        		sendData = mCustomProtocol.buildSignalMessage(packetOrder, totalPackets, CustomProtocol.TYPE_OK);
+			        		counterAck++;
 			                break;
 			            }
 			    		default: {
