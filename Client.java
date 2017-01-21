@@ -14,6 +14,8 @@ import java.util.Observer;
  */
 public class Client extends Thread {
 	
+	private boolean ccc = false;
+	
 	public static final int STATUS_WAIT = 10;
 	public static final int STATUS_INIT = 11;
 	public static final int STATUS_SEND = 12;
@@ -26,7 +28,7 @@ public class Client extends Thread {
 
 	private static final int RETRY_LIMIT = 30;
 	private static final int NO_RESPONSE_LIMIT = 10;
-	//private static final int SLEEP_TIME = 3000;
+	//private static final int SLEEP_TIME = 500;
 	private static final int RECEIVE_TIMEOUT = 3000;
 	
 	private DatagramSocket mSocket = null;
@@ -74,10 +76,11 @@ public class Client extends Thread {
 			}
 		}
 		
-		if (corrupted) {
+		//if (corrupted) {
 			// Add 1 to first byte after checksum calculated in case of send corrupted data simulation
-			mUdpPackets[0][0] = (byte) (mUdpPackets[0][0] + 1);
-		}
+			//mUdpPackets[0][0] = (byte) (mUdpPackets[0][0] + 1);
+		//}
+		ccc = corrupted;
 		
 		mStatus = STATUS_INIT;
 	}
@@ -161,6 +164,20 @@ public class Client extends Thread {
         				sendData = mUdpPackets[i];
                 		mObservable.informUser("Client: Sending fragment " + (i+1) + "/" + mUdpPackets.length + 
                 				" (" + mUdpPackets[i].length + " B) ...\n");
+                		
+                		/************************/
+                		System.out.println(new String(sendData));
+                		if (ccc) {
+                			int corruptedLength = sendData.length;
+                			byte[] corruptedArray = new byte[corruptedLength];
+            				System.arraycopy(sendData, 0, corruptedArray, 0, corruptedLength);
+            				corruptedArray[12] += 1;
+    	        			sendData = corruptedArray;
+    	        			ccc = false;
+    	        		}
+                		System.out.println(new String(sendData));
+                		/************************/    					
+    			        
         				break;
         			}
         			if (i == mUdpPackets.length - 1) {
@@ -180,14 +197,14 @@ public class Client extends Thread {
         		continue loop;
         	}
         	
-        	if (noResponseCount > NO_RESPONSE_LIMIT) {
+        	if (noResponseCount >= NO_RESPONSE_LIMIT) {
         		// Limit times server not responding
         		mUdpPackets = null;
         		mStatus = STATUS_WAIT;
         		mObservable.informUser("Server not responding or responding corrupted. Terminating...\n");
     			continue loop;
         	}      	
-        	if (retryCount > RETRY_LIMIT) {
+        	if (retryCount >= RETRY_LIMIT) {
         		// Limit retry count
         		mUdpPackets = null;
         		mStatus = STATUS_WAIT;
@@ -262,8 +279,7 @@ public class Client extends Thread {
 		if (mSocket != null) {
 			if (data != null) {
 				try {
-					
-			        DatagramPacket dp = new DatagramPacket(
+					DatagramPacket dp = new DatagramPacket(
 			        		data , data.length , mHost , mServerPort);
 			        mSocket.send(dp);
 			        

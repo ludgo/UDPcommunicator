@@ -82,10 +82,10 @@ public class Server extends Thread {
 		        	byte[] data = incoming.getData();
 		        	
 		        	// Only single client at once
-		        	if (client != null && 
+/*		        	if (client != null && 
 		        			!client.equals(Utilities.formatHost(incoming))) {
 		        		continue whileloop;
-		        	}
+		        	}*/
 		        	byte[] udpData = Arrays.copyOf(data, incoming.getLength());	 
 
 		        	byte[] sendData;
@@ -95,17 +95,17 @@ public class Server extends Thread {
 		        	udpData = mCustomProtocol.checkChecksum(udpData);
 		        	if (udpData == null) {
 		        		// Received corrupted data
-		        		emptyRequestCount++;
 		        		sendData = mCustomProtocol.buildSignalMessage(CustomProtocol.TYPE_RETRY);
-	    				counterNack++;
+		        		counterNack++;
 		        		
-		        	} else if (emptyRequestCount > EMPTY_REQUEST_LIMIT) {
+		        	} else if (emptyRequestCount >= EMPTY_REQUEST_LIMIT) {
 		        		// Too much bad requests
 		        		client = null;
 		        		sendData = mCustomProtocol.buildSignalMessage(CustomProtocol.TYPE_FAIL);
 		        		mObservable.informUser("Server: Transport aborted. Waiting for client exceeded limit.\n");
 		        		
 		        	} else {
+	    				client = Utilities.formatHost(incoming);
 		        			        	
 			        	int receivedType = mCustomProtocol.getType(udpData);
 	
@@ -114,7 +114,6 @@ public class Server extends Thread {
 			    		case CustomProtocol.TYPE_CONNECT: {
 			    			if (mUdpPackets == null) {
 			    				// Client initialized communication, tight to it
-			    				client = Utilities.formatHost(incoming);
 				        		sendData = mCustomProtocol.buildSignalMessage(CustomProtocol.TYPE_CONFIRM);		    				
 				        	} else {
 				        		
